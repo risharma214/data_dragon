@@ -5,6 +5,7 @@ const SpreadsheetEditor = () => {
   const [data, setData] = useState([]);
   const [headers, setHeaders] = useState([]);
   const [hasUploadedFile, setHasUploadedFile] = useState(false);
+  const [activeCell, setActiveCell] = useState({ row: null, col: null });
 
   const processFile = useCallback((file) => {
     const reader = new FileReader();
@@ -56,6 +57,10 @@ const SpreadsheetEditor = () => {
     });
   }, []);
 
+  const handleCellClick = useCallback((rowIndex, colIndex) => {
+    setActiveCell({ row: rowIndex, col: colIndex });
+  }, []);
+
   const addRow = useCallback(() => {
     setData(prevData => [...prevData, new Array(headers.length).fill('')]);
   }, [headers.length]);
@@ -68,7 +73,10 @@ const SpreadsheetEditor = () => {
       }
       return newData;
     });
-  }, [headers.length]);
+    if (activeCell.row === rowIndex) {
+      setActiveCell({ row: null, col: null });
+    }
+  }, [headers.length, activeCell]);
 
   const addColumn = useCallback(() => {
     setHeaders(prevHeaders => [...prevHeaders, `Column ${prevHeaders.length + 1}`]);
@@ -78,7 +86,10 @@ const SpreadsheetEditor = () => {
   const deleteColumn = useCallback((colIndex) => {
     setHeaders(prevHeaders => prevHeaders.filter((_, index) => index !== colIndex));
     setData(prevData => prevData.map(row => row.filter((_, index) => index !== colIndex)));
-  }, []);
+    if (activeCell.col === colIndex) {
+      setActiveCell({ row: null, col: null });
+    }
+  }, [activeCell]);
 
   const downloadCSV = useCallback(() => {
     const csvContent = [
@@ -150,7 +161,8 @@ const SpreadsheetEditor = () => {
                 {headers.map((header, index) => (
                   <th
                     key={index}
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider group relative"
+                    className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider group relative
+                      ${activeCell.col === index ? 'bg-blue-50' : ''}`}
                   >
                     <div className="flex items-center gap-2">
                       <input
@@ -173,14 +185,22 @@ const SpreadsheetEditor = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {data.map((row, rowIndex) => (
-                <tr key={rowIndex} className="group">
+                <tr 
+                  key={rowIndex} 
+                  className={`group ${activeCell.row === rowIndex ? 'bg-blue-50' : ''}`}
+                >
                   {row.map((cell, colIndex) => (
-                    <td key={colIndex} className="px-6 py-4 whitespace-nowrap">
+                    <td 
+                      key={colIndex} 
+                      className={`px-6 py-4 whitespace-nowrap
+                        ${activeCell.col === colIndex && activeCell.row !== rowIndex ? 'bg-blue-50' : ''}`}
+                      onClick={() => handleCellClick(rowIndex, colIndex)}
+                    >
                       <input
                         type="text"
                         value={cell}
                         onChange={(e) => handleCellEdit(rowIndex, colIndex, e.target.value)}
-                        className="w-full border-0 focus:ring-2 focus:ring-blue-500 rounded p-1"
+                        className="w-full border-0 focus:ring-2 focus:ring-blue-500 rounded p-1 bg-transparent"
                       />
                     </td>
                   ))}
