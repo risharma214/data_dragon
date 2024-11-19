@@ -5,7 +5,7 @@ import ddLogow from '../assets/ddlogowhite.png';
 
 function Header() {
   return (
-    <header className="bg-gray-900 text-white p-4 flex items-center justify-between">
+    <header className="bg-gray-50 text-white p-4 flex items-center justify-between">
       {/* Logo Section */}
       <div className="flex items-center">
         <img
