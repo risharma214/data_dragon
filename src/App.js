@@ -1,25 +1,60 @@
-import './App.css';  // or './App.css' depending on where you put the directives
+import './App.css';
 import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import Header from './components/Header';  // Import the Header component
-import HomePage from './components/HomePage';  // Import the HomePage component
-import Editor from './components/Editor';  // Import the Editor component
-import Login from './components/LoginPage'
-import Dashboard from './components/Dashboard'
-import Workspace from './components/Workspace'
-import NewProject from './components/NewProject'
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import HomePage from './components/HomePage';
+import Login from './components/LoginPage';
+import Dashboard from './components/Dashboard';
+import Workspace from './components/Workspace';
+import NewProject from './components/NewProject';
 
 function App() {
+  const isLoggedIn = () => {
+    return localStorage.getItem('user') !== null;
+  };
+
+  const ProtectedRoute = ({ children }) => {
+    if (!isLoggedIn()) {
+      return <Navigate to="/login" replace />;
+    }
+    return children;
+  };
+
   return (
     <Router>
       <div className="App">
-        {/* Include Header at the top of the page */}
-        {/* <Header /> */}
-        
-        {/* Define Routes */}
         <Routes>
-          <Route path="/" element={<NewProject />} />  {/* HomePage Route */}
-          <Route path="/editor" element={<Editor />} />  {/* Editor Route */}
+          {/* Public routes */}
+          <Route path="/" element={<HomePage />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/workspace" element={<Workspace />} />
+          
+          {/* Protected routes */}
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/new-project"
+            element={
+              <ProtectedRoute>
+                <NewProject />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/project/:projectId"
+            element={
+              <ProtectedRoute>
+                <Workspace />
+              </ProtectedRoute>
+            }
+          />
+          
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
     </Router>
