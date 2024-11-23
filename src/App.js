@@ -8,8 +8,9 @@ import Workspace from './components/Workspace';
 import NewProject from './components/NewProject';
 
 function App() {
+  // For now, let's do a simple check for the token
   const isLoggedIn = () => {
-    return localStorage.getItem('user') !== null;
+    return localStorage.getItem('googleToken') !== null;
   };
 
   const ProtectedRoute = ({ children }) => {
@@ -54,6 +55,7 @@ function App() {
             }
           />
           
+          {/* Catch all route */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
