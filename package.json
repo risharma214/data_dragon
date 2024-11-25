@@ -4,10 +4,16 @@
   "homepage": "https://risharma214.github.io/data_dragon",
   "private": true,
   "dependencies": {
+    "@radix-ui/react-alert-dialog": "^1.1.2",
+    "@radix-ui/react-icons": "^1.3.2",
+    "@radix-ui/react-slot": "^1.1.0",
+    "@radix-ui/react-toast": "^1.2.2",
     "@react-oauth/google": "^0.12.1",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.1",
     "jwt-decode": "^4.0.0",
     "lucide-react": "^0.453.0",
     "react": "^18.3.1",
@@ -17,6 +23,7 @@
     "react-scripts": "5.0.1",
     "react-spreadsheet": "^0.9.5",
     "scheduler": "^0.23.2",
+    "tailwind-merge": "^2.5.5",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
