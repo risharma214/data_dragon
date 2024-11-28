@@ -86,10 +86,8 @@ const NewProjectPage = ({ onBack, onComplete }) => {
       setError('');
 
       try {
-        // Create FormData
         const formData = new FormData();
         formData.append('file', selectedFile);
-        // Add project name to formData if needed
         formData.append('projectName', projectName);
 
         // Upload to our Express server
@@ -111,12 +109,11 @@ const NewProjectPage = ({ onBack, onComplete }) => {
         const data = await response.json();
         console.log('Upload successful:', data);
         
-        // Here you can handle the successful upload:
-        // - Store the S3 URL/key in your application state
+        // Here, handle the successful upload:
+        // - Store the S3 URL/key in  application state
         // - Navigate to workspace with the file details
         // - Show success message, etc.
         
-        // For now, we'll navigate to workspace with the file key
         navigate(`/workspace/${encodeURIComponent(data.file.key)}`);
 
       } catch (err) {

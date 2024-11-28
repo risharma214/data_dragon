@@ -28,32 +28,40 @@ const LoginPage = () => {
     navigate('/');
   };
 
-  const handleGoogleSuccess = async (tokenResponse) => {
+  const handleGoogleSuccess = async (response) => {
     try {
-      console.log('Google login successful:', tokenResponse);
-      
-      // Fetch user info using the access token
-      const userResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-        headers: {
-          'Authorization': `Bearer ${tokenResponse.access_token}`
-        }
-      });
-      
-      const userInfo = await userResponse.json();
-      console.log('User info:', userInfo);
+        // Get user info from Google response
+        const { email, name } = response.profileObj;
 
-      // Store both token and user info
-      localStorage.setItem('googleToken', tokenResponse.access_token);
-      localStorage.setItem('userInfo', JSON.stringify({
-        name: userInfo.name,
-        email: userInfo.email,
-        picture: userInfo.picture
-      }));
-      
-      navigate('/dashboard');
-    } catch (err) {
-      setError('Failed to get user information. Please try again.');
-      console.error('Google authentication error:', err);
+        // Send to our backend
+        const authResponse = await fetch('http://localhost:3001/api/auth/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                email,
+                name
+            })
+        });
+
+        if (!authResponse.ok) {
+            throw new Error('Authentication failed');
+        }
+
+        const userData = await authResponse.json();
+
+        // Store in localStorage
+        localStorage.setItem('user', JSON.stringify({
+            ...userData,
+            token: response.tokenId  // Google OAuth token
+        }));
+
+        // Navigate to dashboard
+        navigate('/dashboard');
+    } catch (error) {
+        console.error('Login error:', error);
+        setError('Login failed. Please try again.');
     }
   };
 
