@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Document, Page, pdfjs } from 'react-pdf';
+import { useParams } from 'react-router-dom';
 import { 
   ChevronUp,
   ChevronDown,
@@ -24,10 +26,20 @@ import {
   Scissors
 } from 'lucide-react';
 
+// Set up the PDF.js worker
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+
 const ProjectEditor = () => {
+  const { projectId, fileId } = useParams();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [selectedTable, setSelectedTable] = useState(0);
+  const [pdfUrl, setPdfUrl] = useState(null);
+  const [numPages, setNumPages] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   
+  // Your existing mock data
   const tables = [
     {
       id: 1,
@@ -50,6 +62,29 @@ const ProjectEditor = () => {
       ]
     }
   ];
+
+  // Fetch PDF URL when component mounts
+  useEffect(() => {
+    const fetchPdfUrl = async () => {
+      try {
+        const response = await fetch(`http://localhost:3001/api/files/${fileId}/url`);
+        if (!response.ok) throw new Error('Failed to fetch file URL');
+        
+        const data = await response.json();
+        setPdfUrl(data.url);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPdfUrl();
+  }, [fileId]);
+
+  function onDocumentLoadSuccess({ numPages }) {
+    setNumPages(numPages);
+  }
 
   return (
     <div className="h-screen flex flex-col bg-white">
@@ -99,19 +134,52 @@ const ProjectEditor = () => {
           <div className="w-1/2 flex flex-col">
             <div className="h-12 border-b border-gray-100 flex items-center justify-between px-4">
               <span className="font-medium text-sm">Original PDF</span>
-              <button className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
-                <Maximize2 size={16} className="text-gray-400" />
-              </button>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-500">
+                  Page {currentPage} of {numPages}
+                </span>
+                <button className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
+                  <Maximize2 size={16} className="text-gray-400" />
+                </button>
+              </div>
             </div>
             <div className="flex-1 p-6 bg-gray-50 overflow-auto">
-              <div className="bg-white rounded-lg shadow-sm p-6 min-h-full flex items-center justify-center text-gray-400">
-                PDF Preview
-              </div>
+              {loading ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                </div>
+              ) : error ? (
+                <div className="flex items-center justify-center h-full text-red-500">
+                  {error}
+                </div>
+              ) : (
+                <div className="flex justify-center">
+                  <Document
+                    file={pdfUrl}
+                    onLoadSuccess={onDocumentLoadSuccess}
+                    loading={
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                    }
+                    error={
+                      <div className="text-red-500">Failed to load PDF file.</div>
+                    }
+                  >
+                    <Page 
+                      pageNumber={currentPage} 
+                      renderTextLayer={false}
+                      renderAnnotationLayer={false}
+                      className="shadow-lg"
+                    />
+                  </Document>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Spreadsheet Editor */}
+          {/* Spreadsheet Editor - Keep your existing implementation */}
           <div className="w-1/2 flex flex-col border-l">
+            {/* ... Your existing spreadsheet editor code ... */}
+            {/* Keeping all the toolbar, grid, etc. exactly as in your reference */}
             {/* Spreadsheet Toolbar */}
             <div className="border-b border-gray-100 bg-white">
               {/* Main Tools */}

@@ -113,8 +113,7 @@ const NewProjectPage = ({ onBack, onComplete }) => {
         // - Store the S3 URL/key in  application state
         // - Navigate to workspace with the file details
         // - Show success message, etc.
-        
-        navigate(`/workspace/${encodeURIComponent(data.file.key)}`);
+        navigate(`/workspace/${data.project.id}/${data.file.id}`);
 
       } catch (err) {
         setError(err.message || 'Failed to upload file. Please try again.');
