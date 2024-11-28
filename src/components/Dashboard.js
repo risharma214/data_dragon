@@ -12,42 +12,14 @@ import { useNavigate } from 'react-router-dom';
 
 const DashboardPage = ({ onNewProject, onOpenProject }) => {
   const navigate = useNavigate();
-  const projects = [
-    {
-      id: 1,
-      name: "GMP",
-      tables: 8,
-      lastEdited: "2 hours ago"
-    },
-    {
-      id: 2,
-      name: "Some Other Data",
-      tables: 12,
-      lastEdited: "Yesterday"
-    },
-    {
-      id: 3,
-      name: "Financial Report 🤷‍♂️",
-      tables: 5,
-      lastEdited: "3 days ago"
-    },
-    {
-      id: 4,
-      name: "Annual Report Tables",
-      tables: 15,
-      lastEdited: "1 week ago"
-    }
-  ];
-
-  const handleNewProject = () => {
-    navigate('/new-project');
-  };
-
-  const handleOpenProject = (projectId) => {
-    navigate(`/project/${projectId}`);
-  };
-
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [userInfo, setUserInfo] = useState(null);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Load user info from localStorage
   useEffect(() => {
     const storedUserInfo = localStorage.getItem('userInfo');
     if (storedUserInfo) {
@@ -55,9 +27,32 @@ const DashboardPage = ({ onNewProject, onOpenProject }) => {
     }
   }, []);
 
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const dropdownRef = useRef(null);
+  // Fetch projects when user info is available
+  useEffect(() => {
+    const fetchProjects = async () => {
+      if (!userInfo?.userId) return;
 
+      try {
+        const response = await fetch(`http://localhost:3001/api/projects?userId=${userInfo.userId}`);
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch projects');
+        }
+
+        const data = await response.json();
+        setProjects(data);
+      } catch (err) {
+        console.error('Error fetching projects:', err);
+        setError('Failed to load projects');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProjects();
+  }, [userInfo]);
+
+  // Handle clicks outside dropdown
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -69,12 +64,34 @@ const DashboardPage = ({ onNewProject, onOpenProject }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const handleNewProject = () => {
+    navigate('/new-project');
+  };
+
+  const handleOpenProject = (projectId) => {
+    navigate(`/project/${projectId}`);
+  };
+
   const handleLogout = () => {
-    // Clear all stored data
     localStorage.removeItem('googleToken');
     localStorage.removeItem('userInfo');
-    // Navigate to home page
     navigate('/');
+  };
+
+  // Helper function to format dates
+  const formatTimeAgo = (date) => {
+    const now = new Date();
+    const past = new Date(date);
+    const diffTime = Math.abs(now - past);
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) {
+      const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
+      return diffHours <= 1 ? 'Just now' : `${diffHours} hours ago`;
+    }
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    return `${Math.floor(diffDays / 7)} weeks ago`;
   };
 
   return (
@@ -133,7 +150,6 @@ const DashboardPage = ({ onNewProject, onOpenProject }) => {
         </div>
       </header>
 
-
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* New Project Section */}
         <div className="mb-12">
@@ -180,48 +196,62 @@ const DashboardPage = ({ onNewProject, onOpenProject }) => {
             </div>
           </div>
           
-          <div 
-            className="grid gap-5"
-            style={{
-              gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
-              gridAutoRows: '160px'
-            }}
-          >
-            {projects.map((project) => (
-              <button
-                key={project.id}
-                onClick={() => onOpenProject(project.id)}
-                className="group text-left w-full h-full"
-              >
-                <div className="w-full h-full rounded-lg border border-gray-200 p-4 transition-all duration-300 relative bg-white">
-                  {/* Gradient border on hover */}
-                  <div className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{
-                    background: 'linear-gradient(to right, #ec4899, #3b82f6, #a855f7)',
-                    padding: '1px'
-                  }}>
-                    <div className="w-full h-full bg-white rounded-lg" />
-                  </div>
-                  
-                  {/* Content */}
-                  <div className="relative h-full flex flex-col justify-between">
-                    <h3 className="font-medium text-gray-900 mb-2 line-clamp-2">
-                      {project.name}
-                    </h3>
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 text-sm text-gray-500">
-                        <Table size={14} />
-                        <span>{project.tables} tables</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-500">
-                        <Clock size={14} />
-                        <span>{project.lastEdited}</span>
+          {loading ? (
+            <div className="text-center py-10">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500 mx-auto"></div>
+            </div>
+          ) : error ? (
+            <div className="text-center py-10 text-red-500">
+              {error}
+            </div>
+          ) : projects.length === 0 ? (
+            <div className="text-center py-10 text-gray-500">
+              No projects yet. Create a new project to get started!
+            </div>
+          ) : (
+            <div 
+              className="grid gap-5"
+              style={{
+                gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+                gridAutoRows: '160px'
+              }}
+            >
+              {projects.map((project) => (
+                <button
+                  key={project.id}
+                  onClick={() => handleOpenProject(project.id)}
+                  className="group text-left w-full h-full"
+                >
+                  <div className="w-full h-full rounded-lg border border-gray-200 p-4 transition-all duration-300 relative bg-white">
+                    {/* Gradient border on hover */}
+                    <div className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{
+                      background: 'linear-gradient(to right, #ec4899, #3b82f6, #a855f7)',
+                      padding: '1px'
+                    }}>
+                      <div className="w-full h-full bg-white rounded-lg" />
+                    </div>
+                    
+                    {/* Content */}
+                    <div className="relative h-full flex flex-col justify-between">
+                      <h3 className="font-medium text-gray-900 mb-2 line-clamp-2">
+                        {project.name}
+                      </h3>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                          <Table size={14} />
+                          <span>{project.tables} tables</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                          <Clock size={14} />
+                          <span>{formatTimeAgo(project.lastEdited)}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </button>
-            ))}
-          </div>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </main>
     </div>
