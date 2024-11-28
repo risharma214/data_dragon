@@ -77,49 +77,54 @@ const NewProjectPage = ({ onBack, onComplete }) => {
   };
 
   const handleUpload = async () => {
-    if (!projectName.trim()) {
-      setError('Please enter a project name');
-      return;
-    }
-
-    setProcessing(true);
-    setError('');
-
-    try {
-      // Create FormData for file upload
-      const formData = new FormData();
-      formData.append('file', selectedFile);
-      formData.append('projectName', projectName);
-
-      // TODO: Replace with your actual API endpoint
-      const response = await fetch('/api/projects', {
-        method: 'POST',
-        body: formData,
-        headers: {
-          // Include auth token if needed
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-        // Track upload progress
-        onUploadProgress: (progressEvent) => {
-          const progress = (progressEvent.loaded / progressEvent.total) * 100;
-          setUploadProgress(Math.round(progress));
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Upload failed');
+      if (!projectName.trim()) {
+        setError('Please enter a project name');
+        return;
       }
 
-      const data = await response.json();
-      
-      // Navigate to the workspace with the new project ID
-      navigate(`/workspace/${data.projectId}`);
-    } catch (err) {
-      setError(err.message || 'Failed to upload file. Please try again.');
-    } finally {
-      setProcessing(false);
-      setUploadProgress(0);
-    }
+      setProcessing(true);
+      setError('');
+
+      try {
+        // Create FormData
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        // Add project name to formData if needed
+        formData.append('projectName', projectName);
+
+        // Upload to our Express server
+        const response = await fetch('http://localhost:3001/upload', {
+          method: 'POST',
+          body: formData,
+          // Note: Don't set Content-Type header, let the browser set it with boundary for FormData
+          headers: {
+            // Include auth token if needed
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          },
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Upload failed');
+        }
+
+        const data = await response.json();
+        console.log('Upload successful:', data);
+        
+        // Here you can handle the successful upload:
+        // - Store the S3 URL/key in your application state
+        // - Navigate to workspace with the file details
+        // - Show success message, etc.
+        
+        // For now, we'll navigate to workspace with the file key
+        navigate(`/workspace/${encodeURIComponent(data.file.key)}`);
+
+      } catch (err) {
+        setError(err.message || 'Failed to upload file. Please try again.');
+      } finally {
+        setProcessing(false);
+        setUploadProgress(0);
+      }
   };
 
   const handleBack = () => {
