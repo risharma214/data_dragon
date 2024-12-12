@@ -8,9 +8,10 @@ import Workspace from './components/Workspace';
 import NewProject from './components/NewProject';
 
 function App() {
-  // For now, let's do a simple check for the token
+  // Updated to check for 'user' instead of 'googleToken'
   const isLoggedIn = () => {
-    return localStorage.getItem('googleToken') !== null;
+    const user = localStorage.getItem('user');
+    return user !== null;
   };
 
   const ProtectedRoute = ({ children }) => {
@@ -30,13 +31,13 @@ function App() {
           <Route path="/workspace" element={<Workspace />} />
           
           {/* Protected routes */}
-          <Route
-            path="/dashboard"
+          <Route 
+            path="/dashboard" 
             element={
               <ProtectedRoute>
                 <Dashboard />
               </ProtectedRoute>
-            }
+            } 
           />
           <Route
             path="/new-project"
@@ -47,7 +48,15 @@ function App() {
             }
           />
           <Route
-            path="/project/:projectId"
+            path="/project/:projectId/*"
+            element={
+              <ProtectedRoute>
+                <Workspace />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/project/:projectId/file/:fileId"
             element={
               <ProtectedRoute>
                 <Workspace />

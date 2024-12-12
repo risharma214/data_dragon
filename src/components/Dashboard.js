@@ -19,38 +19,60 @@ const DashboardPage = ({ onNewProject, onOpenProject }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  // Load user info from localStorage
   useEffect(() => {
-    const storedUserInfo = localStorage.getItem('userInfo');
-    if (storedUserInfo) {
-      setUserInfo(JSON.parse(storedUserInfo));
+    const storedUser = localStorage.getItem('user');
+    console.log('Full stored user data:', storedUser);
+    if (storedUser) {
+        try {
+            const parsedUser = JSON.parse(storedUser);
+            console.log('Parsed user data:', parsedUser);
+            console.log('User ID from parsed data:', parsedUser.userId);
+            setUserInfo(parsedUser);
+        } catch (error) {
+            console.error('Error parsing user data:', error);
+            localStorage.removeItem('user');
+            navigate('/login');
+        }
+    } else {
+        navigate('/login');
     }
-  }, []);
+}, [navigate]);
+
 
   // Fetch projects when user info is available
   useEffect(() => {
     const fetchProjects = async () => {
       if (!userInfo?.userId) return;
-
+    
       try {
+        setLoading(true);
         const response = await fetch(`http://localhost:3001/api/projects?userId=${userInfo.userId}`);
         
         if (!response.ok) {
-          throw new Error('Failed to fetch projects');
+          throw new Error(`Failed to fetch projects: ${response.statusText}`);
         }
-
+    
         const data = await response.json();
+        
+        // Log the received data for debugging
+        console.log('Received projects:', data);
+        
         setProjects(data);
       } catch (err) {
         console.error('Error fetching projects:', err);
-        setError('Failed to load projects');
+        setError(err.message || 'Failed to load projects');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchProjects();
+    if (userInfo) {  // Only fetch if we have user info
+      fetchProjects();
+    } else {
+      setLoading(false);  // Set loading to false if no user info
+    }
   }, [userInfo]);
+
 
   // Handle clicks outside dropdown
   useEffect(() => {
@@ -68,13 +90,16 @@ const DashboardPage = ({ onNewProject, onOpenProject }) => {
     navigate('/new-project');
   };
 
-  const handleOpenProject = (projectId) => {
-    navigate(`/project/${projectId}`);
+  const handleOpenProject = (project) => {
+    if (project.files && project.files.length > 0) {
+      navigate(`/project/${project._id}/file/${project.files[0]._id}`);
+    } else {
+      navigate(`/project/${project._id}`);
+    }
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('googleToken');
-    localStorage.removeItem('userInfo');
+    localStorage.removeItem('user');  // Only remove 'user'
     navigate('/');
   };
 
@@ -219,7 +244,7 @@ const DashboardPage = ({ onNewProject, onOpenProject }) => {
               {projects.map((project) => (
                 <button
                   key={project.id}
-                  onClick={() => handleOpenProject(project.id)}
+                  onClick={() => handleOpenProject(project)}
                   className="group text-left w-full h-full"
                 >
                   <div className="w-full h-full rounded-lg border border-gray-200 p-4 transition-all duration-300 relative bg-white">

@@ -28,37 +28,57 @@ const LoginPage = () => {
     navigate('/');
   };
 
-  const handleGoogleSuccess = async (response) => {
+  const handleGoogleSuccess = async (tokenResponse) => {
     try {
-        // Get user info from Google response
-        const { email, name } = response.profileObj;
+        console.log('Google token response:', tokenResponse);
 
-        // Send to our backend
-        const authResponse = await fetch('http://localhost:3001/api/auth/login', {
-            method: 'POST',
+        // Get user info using the access token
+        const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
             headers: {
-                'Content-Type': 'application/json',
+                Authorization: `Bearer ${tokenResponse.access_token}`,
             },
-            body: JSON.stringify({
-                email,
-                name
-            })
         });
 
-        if (!authResponse.ok) {
-            throw new Error('Authentication failed');
+        if (!userInfoResponse.ok) {
+            throw new Error('Failed to get user info');
         }
 
-        const userData = await authResponse.json();
+        const userInfo = await userInfoResponse.json();
+        console.log('User info from Google:', userInfo);
 
-        // Store in localStorage
-        localStorage.setItem('user', JSON.stringify({
-            ...userData,
-            token: response.tokenId  // Google OAuth token
-        }));
+        // After sending to backend
+        const authResponse = await fetch('http://localhost:3001/api/auth/login', {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+              email: userInfo.email,
+              name: userInfo.name
+          })
+        });
+
+        // Add this logging
+        console.log('Auth Response status:', authResponse.status);
+        const userData = await authResponse.json();
+        console.log('Auth Response data:', userData);
+
+        // When storing in localStorage
+        const userDataToStore = {
+          ...userData,
+          token: tokenResponse.access_token,
+          picture: userInfo.picture  // Add this if you want to display user's photo
+        };
+        console.log('Storing in localStorage:', userDataToStore);
+        localStorage.setItem('user', JSON.stringify(userDataToStore));
+
+        console.log("going to dashboard now")
 
         // Navigate to dashboard
         navigate('/dashboard');
+
+        console.log("past dashboard navigation.")
+
     } catch (error) {
         console.error('Login error:', error);
         setError('Login failed. Please try again.');

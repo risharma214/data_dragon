@@ -77,50 +77,46 @@ const NewProjectPage = ({ onBack, onComplete }) => {
   };
 
   const handleUpload = async () => {
-      if (!projectName.trim()) {
+    if (!projectName.trim()) {
         setError('Please enter a project name');
         return;
-      }
+    }
 
-      setProcessing(true);
-      setError('');
+    setProcessing(true);
+    setError('');
 
-      try {
+    try {
+        // Get user from localStorage
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (!user) {
+            throw new Error('User not found');
+        }
+
         const formData = new FormData();
         formData.append('file', selectedFile);
         formData.append('projectName', projectName);
+        formData.append('userId', user.userId);  // Add user ID to the form data
 
-        // Upload to our Express server
-        const response = await fetch('http://localhost:3001/upload', {
-          method: 'POST',
-          body: formData,
-          // Note: Don't set Content-Type header, let the browser set it with boundary for FormData
-          headers: {
-            // Include auth token if needed
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          },
+        const response = await fetch('http://localhost:3001/api/upload', {
+            method: 'POST',
+            body: formData,
         });
 
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Upload failed');
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Upload failed');
         }
 
         const data = await response.json();
         console.log('Upload successful:', data);
         
-        // Here, handle the successful upload:
-        // - Store the S3 URL/key in  application state
-        // - Navigate to workspace with the file details
-        // - Show success message, etc.
-        navigate(`/workspace/${data.project.id}/${data.file.id}`);
-
-      } catch (err) {
+        navigate(`/project/${data.project.id}`);
+    } catch (err) {
         setError(err.message || 'Failed to upload file. Please try again.');
-      } finally {
+    } finally {
         setProcessing(false);
         setUploadProgress(0);
-      }
+    }
   };
 
   const handleBack = () => {
