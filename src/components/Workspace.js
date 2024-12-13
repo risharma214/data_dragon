@@ -190,6 +190,28 @@ const ProjectEditor = () => {
     }
   };
 
+  const downloadCSV = () => {
+    if (!currentTableData || !currentTableData.currentData) return;
+  
+    const { currentData, structure } = currentTableData;
+  
+    // Convert table data to CSV format
+    const csvContent = [
+      Array.from({ length: structure.columnCount }, (_, i) => String.fromCharCode(65 + i)).join(","), // Header row
+      ...currentData.map(row => row.map(cell => `"${cell || ""}"`).join(",")) // Data rows
+    ].join("\n");
+  
+    // Create a blob and trigger a download
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", "table_data.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+  
   const renderPdfViewer = () => {
     if (loading) {
       return (
@@ -314,11 +336,18 @@ const ProjectEditor = () => {
             </div>
           </div>
 
-          <input
+          {/* <input
             type="text"
             defaultValue={projectData?.name || "Loading..."}
             className="text-gray-900 font-medium px-3 py-1 border border-transparent rounded-lg hover:bg-gray-50 focus:border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+          /> */}
+          <input
+            type="text"
+            value={projectData?.name || "Loading..."}
+            readOnly
+            className="text-gray-900 font-medium px-3 py-1 border border-transparent rounded-lg hover:bg-gray-50 focus:border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
           />
+
 
           <div className="flex items-center gap-3 ml-auto">
             <button className="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-2">
@@ -329,7 +358,13 @@ const ProjectEditor = () => {
               <Save size={16} />
               Save
             </button>
-            <button className="px-3 py-1.5 text-sm text-white bg-green-500 rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2">
+            {/* <button className="px-3 py-1.5 text-sm text-white bg-green-500 rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2">
+              <Download size={16} />
+              Export
+            </button> */}
+            <button
+              onClick={downloadCSV}
+              className="px-3 py-1.5 text-sm text-white bg-green-500 rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2">
               <Download size={16} />
               Export
             </button>
