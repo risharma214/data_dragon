@@ -11,6 +11,7 @@ const authRoutes = require('./routes/auth');
 const uploadRoutes = require('./routes/upload');
 const fileRoutes = require('./routes/files');
 const projectRoutes = require('./routes/projects');  // Add this line
+const tableRoutes = require('./routes/tables');
 
 const app = express();
 
@@ -63,12 +64,18 @@ const upload = multer({
 
 app.locals.upload = upload;
 
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/upload', uploadRoutes);
-app.use('/api/files', fileRoutes);
-app.use('/api/projects', projectRoutes);  // Add the projects route normally
 
+
+
+// app.use('/api/projects', (req, res, next) => {
+//     console.log('Projects route hit:', {
+//         method: req.method,
+//         url: req.url,
+//         query: req.query,
+//         params: req.params
+//     });
+//     next();
+// });
 
 app.use('/api/projects', (req, res, next) => {
     console.log('Projects route hit:', {
@@ -78,7 +85,14 @@ app.use('/api/projects', (req, res, next) => {
         params: req.params
     });
     next();
-});
+}, projectRoutes);
+
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/upload', uploadRoutes);
+app.use('/api/files', fileRoutes);
+// app.use('/api/projects', projectRoutes);  // Add the projects route normally
+app.use('/api/tables', tableRoutes);
 
 // Health check route
 app.get('/health', (req, res) => {

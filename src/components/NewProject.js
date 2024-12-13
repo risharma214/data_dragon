@@ -92,25 +92,38 @@ const NewProjectPage = ({ onBack, onComplete }) => {
             throw new Error('User not found');
         }
 
+        // 1. Upload file
         const formData = new FormData();
         formData.append('file', selectedFile);
         formData.append('projectName', projectName);
-        formData.append('userId', user.userId);  // Add user ID to the form data
+        formData.append('userId', user.userId);
 
-        const response = await fetch('http://localhost:3001/api/upload', {
+        const uploadResponse = await fetch('http://localhost:3001/api/upload', {
             method: 'POST',
             body: formData,
         });
 
-        if (!response.ok) {
-            const errorData = await response.json();
+        if (!uploadResponse.ok) {
+            const errorData = await uploadResponse.json();
             throw new Error(errorData.error || 'Upload failed');
         }
 
-        const data = await response.json();
-        console.log('Upload successful:', data);
+        const uploadData = await uploadResponse.json();
+        console.log('Upload response:', uploadData);
         
-        navigate(`/project/${data.project.id}`);
+        // 2. Trigger OCR processing
+        const processResponse = await fetch(
+            `http://localhost:3001/api/files/${uploadData.file.id}/process`,
+            { method: 'POST' }
+        );
+
+        if (!processResponse.ok) {
+            throw new Error('Failed to process file');
+        }
+
+        // 3. Navigate to workspace
+        navigate(`/project/${uploadData.project.id}`);
+
     } catch (err) {
         setError(err.message || 'Failed to upload file. Please try again.');
     } finally {

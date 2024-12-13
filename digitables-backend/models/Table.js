@@ -28,8 +28,15 @@ const modificationSchema = new mongoose.Schema({
         required: true,
         ref: 'User'
     },
-    details: mongoose.Schema.Types.Mixed  // Flexible field for different modification types
+    details: mongoose.Schema.Types.Mixed
 });
+
+const boundingBoxSchema = new mongoose.Schema({
+    Height: Number,
+    Left: Number,
+    Top: Number,
+    Width: Number
+}, { _id: false });
 
 const tableSchema = new mongoose.Schema({
     fileId: {
@@ -42,20 +49,34 @@ const tableSchema = new mongoose.Schema({
         required: true
     },
     boundingBox: {
-        x: Number,
-        y: Number,
-        width: Number,
-        height: Number
+        type: boundingBoxSchema,
+        required: true
     },
-    originalData: [[String]],  // 2D array of strings
-    currentData: [[String]],   // 2D array of strings
+    originalData: {
+        type: [[String]],
+        required: true
+    },
+    currentData: {
+        type: [[String]],
+        required: true
+    },
     structure: {
-        rowCount: Number,
-        columnCount: Number,
+        rowCount: {
+            type: Number,
+            required: true
+        },
+        columnCount: {
+            type: Number,
+            required: true
+        },
         mergedCells: [mergedCellSchema],
         highlights: [highlightSchema]
     },
-    modifications: [modificationSchema]
+    modifications: [modificationSchema],
+    textractMetadata: {
+        cellCoordinates: [[boundingBoxSchema]],
+        processed: Boolean
+    }
 }, {
     timestamps: true
 });

@@ -4,6 +4,7 @@
   "homepage": "https://risharma214.github.io/data_dragon",
   "private": true,
   "dependencies": {
+    "@aws-sdk/client-textract": "^3.709.0",
     "@aws-sdk/s3-request-presigner": "^3.709.0",
     "@radix-ui/react-alert-dialog": "^1.1.2",
     "@radix-ui/react-icons": "^1.3.2",

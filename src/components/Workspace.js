@@ -29,6 +29,7 @@ const ProjectEditor = () => {
   const navigate = useNavigate();
   const defaultLayoutPluginInstance = defaultLayoutPlugin();
 
+  const [activeCell, setActiveCell] = useState({ row: null, col: null });
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [selectedTable, setSelectedTable] = useState(null);
   const [pdfUrl, setPdfUrl] = useState(null);
@@ -39,29 +40,34 @@ const ProjectEditor = () => {
   const [tables, setTables] = useState([]);
   const [currentTableData, setCurrentTableData] = useState(null);
 
+
+  // In Workspace.js, update the initial data fetch
   useEffect(() => {
     const fetchProjectData = async () => {
       if (!projectId) return;
-  
+
       try {
         setLoading(true);
         const response = await fetch(`http://localhost:3001/api/projects/${projectId}`);
         if (!response.ok) throw new Error('Failed to fetch project data');
         
         const data = await response.json();
+        console.log('Full Project data:', data);
         setProjectData(data);
         
-        if (fileId) {
-          const currentFile = data.files.find(file => file.id === fileId);
+        // Find the file data
+        if (data.files && data.files.length > 0) {
+          const currentFile = fileId 
+            ? data.files.find(f => f.id === fileId)
+            : data.files[0];  // Use first file if no fileId specified
+            
+          console.log('Current file:', currentFile);
+          
           if (currentFile?.tables?.length > 0) {
+            console.log('Setting tables:', currentFile.tables);
             setTables(currentFile.tables);
             setSelectedTable(currentFile.tables[0].id);
-          }
-        } else if (data.files?.length > 0) {
-          const firstFile = data.files[0];
-          setTables(firstFile.tables || []);
-          if (firstFile.tables?.length > 0) {
-            setSelectedTable(firstFile.tables[0].id);
+            console.log('Selected table ID:', currentFile.tables[0].id);
           }
         }
       } catch (err) {
@@ -71,19 +77,24 @@ const ProjectEditor = () => {
         setLoading(false);
       }
     };
-  
+
     fetchProjectData();
   }, [projectId, fileId]);
 
   useEffect(() => {
     const fetchTableData = async () => {
-      if (!selectedTable) return;
+      if (!selectedTable) {
+        console.log('No table selected');
+        return;
+      }
       
       try {
+        console.log('Fetching data for table:', selectedTable);
         const response = await fetch(`http://localhost:3001/api/tables/${selectedTable}`);
         if (!response.ok) throw new Error('Failed to fetch table data');
         
         const data = await response.json();
+        console.log('Received table data:', data);
         setCurrentTableData(data);
         if (data.pageNumber) {
           setCurrentPage(data.pageNumber);
@@ -93,9 +104,10 @@ const ProjectEditor = () => {
         setError('Failed to load table data');
       }
     };
-
+  
     fetchTableData();
   }, [selectedTable]);
+
 
   useEffect(() => {
     const fetchPdfUrl = async () => {
@@ -138,6 +150,46 @@ const ProjectEditor = () => {
     });
   };
 
+  const handleCellClick = (rowIndex, colIndex) => {
+    setActiveCell({ row: rowIndex, col: colIndex });
+  };
+
+  const addRow = () => {
+    if (!currentTableData) return;
+    
+    const newData = [...currentTableData.currentData];
+    const newRow = new Array(currentTableData.structure.columnCount).fill('');
+    newData.push(newRow);
+    
+    setCurrentTableData({
+      ...currentTableData,
+      currentData: newData,
+      structure: {
+        ...currentTableData.structure,
+        rowCount: currentTableData.structure.rowCount + 1
+      }
+    });
+  };
+
+  const deleteRow = (rowIndex) => {
+    if (!currentTableData) return;
+    
+    const newData = currentTableData.currentData.filter((_, index) => index !== rowIndex);
+    
+    setCurrentTableData({
+      ...currentTableData,
+      currentData: newData,
+      structure: {
+        ...currentTableData.structure,
+        rowCount: currentTableData.structure.rowCount - 1
+      }
+    });
+    
+    if (activeCell.row === rowIndex) {
+      setActiveCell({ row: null, col: null });
+    }
+  };
+
   const renderPdfViewer = () => {
     if (loading) {
       return (
@@ -178,16 +230,18 @@ const ProjectEditor = () => {
   };
 
   const renderGrid = () => {
+    console.log('Rendering grid with data:', currentTableData); // Add this
     if (!currentTableData) return null;
-
+  
     const { currentData, structure } = currentTableData;
     const columns = Array.from(
       { length: structure.columnCount }, 
       (_, i) => String.fromCharCode(65 + i)
     );
-
+  
     return (
       <div className="min-w-full inline-block">
+        {/* Column Headers */}
         <div className="sticky top-0 bg-gray-50 border-b flex">
           <div className="w-10 h-8 border-r border-gray-200 flex items-center justify-center text-gray-400 text-sm"></div>
           {columns.map(col => (
@@ -196,20 +250,44 @@ const ProjectEditor = () => {
             </div>
           ))}
         </div>
-
+  
+        {/* Grid Content */}
         <div>
           {currentData.map((row, rowIndex) => (
-            <div key={rowIndex} className="flex">
+            <div key={rowIndex} className={`flex group ${
+              activeCell.row === rowIndex ? 'bg-blue-50' : ''
+            }`}>
+              {/* Row Header */}
               <div className="w-10 h-8 border-r border-b border-gray-200 flex items-center justify-center text-gray-600 text-sm font-medium bg-gray-50 sticky left-0">
-                {rowIndex + 1}
+                <div className="flex items-center gap-1">
+                  <span>{rowIndex + 1}</span>
+                  <button
+                    onClick={() => deleteRow(rowIndex)}
+                    className="invisible group-hover:visible text-red-500 hover:text-red-700 p-1"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </div>
               </div>
+              
+              {/* Row Data */}
               {row.map((cell, colIndex) => (
-                <div key={colIndex} className="w-40 h-8 border-r border-b border-gray-200">
+                <div 
+                  key={colIndex} 
+                  className={`w-40 h-8 border-r border-b border-gray-200 ${
+                    activeCell.col === colIndex && activeCell.row !== rowIndex ? 'bg-blue-50/50' : ''
+                  }`}
+                  onClick={() => handleCellClick(rowIndex, colIndex)}
+                >
                   <input
                     type="text"
                     value={cell || ''}
                     onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
-                    className="w-full h-full px-2 focus:outline-none focus:bg-blue-50 focus:ring-1 focus:ring-blue-500"
+                    className={`w-full h-full px-2 focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                      activeCell.row === rowIndex && activeCell.col === colIndex
+                        ? 'bg-blue-50 ring-1 ring-blue-500'
+                        : ''
+                    }`}
                   />
                 </div>
               ))}
@@ -275,10 +353,18 @@ const ProjectEditor = () => {
           <div className="border-b border-gray-100 bg-white">
             <div className="h-12 px-4 flex items-center gap-4">
               <div className="flex items-center gap-2 border-r pr-4">
-                <button className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors text-gray-600">
+                <button 
+                  onClick={addRow}
+                  className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors text-gray-600"
+                  title="Add Row"
+                >
                   <Plus size={16} />
                 </button>
-                <button className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors text-gray-600">
+                <button 
+                  className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors text-gray-600"
+                  title="Delete Selected Row"
+                  onClick={() => activeCell.row !== null && deleteRow(activeCell.row)}
+                >
                   <Trash2 size={16} />
                 </button>
               </div>

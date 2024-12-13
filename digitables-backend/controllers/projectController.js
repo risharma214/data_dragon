@@ -2,7 +2,6 @@ const Project = require('../models/Project');
 const File = require('../models/File');
 const { ObjectId } = require('mongodb');
 
-
 const getUserProjects = async (req, res) => {
     try {
         const { userId } = req.query;
@@ -29,62 +28,10 @@ const getUserProjects = async (req, res) => {
     }
 };
 
-// const getUserProjects = async (req, res) => {
-//     try {
-//         const { userId } = req.query;
-//         console.log('Received userId:', userId);
-
-//         if (!userId) {
-//             return res.status(400).json({ error: 'User ID is required' });
-//         }
-
-//         console.log('Attempting to create ObjectId with:', userId);
-//         const userObjectId = new ObjectId(userId);
-//         console.log('Created userObjectId:', userObjectId);
-
-//         // Log the query we're about to execute
-//         console.log('Executing MongoDB query with userId:', userObjectId);
-
-//         // Fetch projects with their associated files
-//         const projects = await Project.aggregate([
-//             { 
-//                 $match: { 
-//                     userId: userObjectId 
-//                 } 
-//             },
-//             {
-//                 $lookup: {
-//                     from: 'files',
-//                     localField: '_id',
-//                     foreignField: 'projectId',
-//                     as: 'files'
-//                 }
-//             },
-//             {
-//                 $project: {
-//                     id: '$_id',
-//                     name: 1,
-//                     description: 1,
-//                     tables: { $size: '$files' },
-//                     lastEdited: '$updatedAt',
-//                     createdAt: 1
-//                 }
-//             }
-//         ]);
-
-//         console.log('Query results:', projects);
-
-//         // Return empty array if no projects found instead of 404
-//         res.json(projects || []);
-//     } catch (error) {
-//         console.error('Detailed error in getUserProjects:', error);
-//         res.status(500).json({ error: 'Failed to fetch projects' });
-//     }
-// };
-
 const getProjectDetails = async (req, res) => {
     try {
         const { projectId } = req.params;
+        console.log('Fetching project details for:', projectId);
 
         // Validate projectId format
         if (!ObjectId.isValid(projectId)) {
@@ -111,7 +58,6 @@ const getProjectDetails = async (req, res) => {
                             }
                         },
                         {
-                            // Lookup tables for each file
                             $lookup: {
                                 from: 'tables',
                                 let: { fileId: '$_id' },
@@ -122,7 +68,6 @@ const getProjectDetails = async (req, res) => {
                                         }
                                     },
                                     {
-                                        // Sort tables by page number
                                         $sort: { pageNumber: 1 }
                                     }
                                 ],
@@ -135,42 +80,58 @@ const getProjectDetails = async (req, res) => {
             }
         ]);
 
+        console.log('Raw project data:', JSON.stringify(project, null, 2));
+
         if (!project || project.length === 0) {
+            console.log('No project found with ID:', projectId);
             return res.status(404).json({ error: 'Project not found' });
         }
 
         const projectData = project[0];
+        console.log('Processing files for project:', projectData._id);
         
         // Transform files array to include table count and processing status
-        projectData.files = projectData.files.map(file => ({
-            id: file._id,
-            name: file.originalName,
-            s3Key: file.s3Key,
-            fileType: file.fileType,
-            processingStatus: file.processingStatus,
-            tableCount: file.tables.length,
-            tables: file.tables.map(table => ({
-                id: table._id,
-                pageNumber: table.pageNumber,
-                boundingBox: table.boundingBox,
-                structure: {
-                    rowCount: table.structure?.rowCount,
-                    columnCount: table.structure?.columnCount
-                }
-            }))
-        }));
+        projectData.files = projectData.files.map(file => {
+            console.log('Processing file:', file._id, 'Tables:', file.tables?.length || 0);
+            return {
+                id: file._id,
+                name: file.originalName,
+                s3Key: file.s3Key,
+                fileType: file.fileType,
+                processingStatus: file.processingStatus,
+                tableCount: file.tables?.length || 0,
+                tables: (file.tables || []).map(table => {
+                    console.log('Processing table:', table._id, 'Structure:', table.structure);
+                    return {
+                        id: table._id,
+                        pageNumber: table.pageNumber,
+                        boundingBox: table.boundingBox,
+                        structure: {
+                            rowCount: table.structure?.rowCount,
+                            columnCount: table.structure?.columnCount
+                        }
+                    };
+                })
+            };
+        });
 
-        res.json({
+        const response = {
             id: projectData._id,
             name: projectData.name,
             createdAt: projectData.createdAt,
             updatedAt: projectData.updatedAt,
             files: projectData.files
-        });
+        };
+
+        console.log('Sending response:', JSON.stringify(response, null, 2));
+        res.json(response);
 
     } catch (error) {
-        console.error('Error fetching project details:', error);
-        res.status(500).json({ error: 'Failed to fetch project details' });
+        console.error('Error in getProjectDetails:', error);
+        res.status(500).json({ 
+            error: 'Failed to fetch project details',
+            details: error.message 
+        });
     }
 };
 
