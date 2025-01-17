@@ -82,7 +82,8 @@ app.use('/api/projects', (req, res, next) => {
         method: req.method,
         url: req.url,
         query: req.query,
-        params: req.params
+        params: req.params,
+        body: req.body
     });
     next();
 }, projectRoutes);

@@ -1,6 +1,17 @@
 const Project = require('../models/Project');
 const File = require('../models/File');
+const Table = require('../models/Table');
+const { S3Client, DeleteObjectCommand } = require('@aws-sdk/client-s3');
 const { ObjectId } = require('mongodb');
+
+// Initialize S3 client
+const s3Client = new S3Client({
+    region: process.env.AWS_REGION,
+    credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+    }
+});
 
 const getUserProjects = async (req, res) => {
     try {
@@ -23,6 +34,87 @@ const getUserProjects = async (req, res) => {
         console.error('Error in getUserProjects:', error);
         res.status(500).json({ 
             error: 'Failed to fetch projects',
+            details: error.message 
+        });
+    }
+};
+
+const renameProject = async (req, res) => {
+    try {
+        const { projectId } = req.params;  // Get from URL params
+        const { newName } = req.body;      // Get from request body
+
+        console.log('Renaming project:', { projectId, newName }); // Debug log
+
+        if (!newName || newName.trim().length === 0) {
+            return res.status(400).json({ error: 'Project name cannot be empty' });
+        }
+
+        const project = await Project.findByIdAndUpdate(
+            projectId,
+            { name: newName.trim() },
+            { new: true }  // Return the updated document
+        );
+
+        if (!project) {
+            return res.status(404).json({ error: 'Project not found' });
+        }
+
+        res.json(project);
+    } catch (error) {
+        console.error('Error renaming project:', error);
+        res.status(500).json({ 
+            error: 'Failed to rename project',
+            details: error.message 
+        });
+    }
+};
+
+const deleteProject = async (req, res) => {
+    try {
+        const { projectId } = req.params;
+
+        // Find the project
+        const project = await Project.findById(projectId);
+        if (!project) {
+            return res.status(404).json({ error: 'Project not found' });
+        }
+
+        // Find all files associated with the project
+        const files = await File.find({ projectId });
+
+        // Delete files from S3 and collect all tableIds
+        const deletionPromises = files.map(async (file) => {
+            // Delete from S3
+            try {
+                const deleteCommand = new DeleteObjectCommand({
+                    Bucket: process.env.S3_BUCKET_NAME,
+                    Key: file.s3Key
+                });
+                await s3Client.send(deleteCommand);
+            } catch (error) {
+                console.error(`Failed to delete file ${file.s3Key} from S3:`, error);
+                // Continue with other deletions even if S3 deletion fails
+            }
+
+            // Find and delete all tables associated with this file
+            await Table.deleteMany({ fileId: file._id });
+        });
+
+        // Wait for all S3 deletions and table deletions to complete
+        await Promise.all(deletionPromises);
+
+        // Delete all files from MongoDB
+        await File.deleteMany({ projectId });
+
+        // Finally, delete the project
+        await Project.findByIdAndDelete(projectId);
+
+        res.json({ message: 'Project and associated resources deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting project:', error);
+        res.status(500).json({ 
+            error: 'Failed to delete project',
             details: error.message 
         });
     }
@@ -137,5 +229,7 @@ const getProjectDetails = async (req, res) => {
 
 module.exports = {
     getUserProjects,
-    getProjectDetails
+    getProjectDetails,
+    renameProject,
+    deleteProject
 };

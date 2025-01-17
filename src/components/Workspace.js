@@ -321,7 +321,7 @@ const ProjectEditor = () => {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-white">
+    <div className="h-screen flex flex-col bg-white pb-48">
       <header className="border-b border-gray-100 bg-white">
         <div className="flex items-center h-14 px-4 gap-6">
           <div className="flex items-center gap-4">
@@ -384,7 +384,7 @@ const ProjectEditor = () => {
         </div>
         </div>
 
-        <div className="w-1/2 flex flex-col border-l">
+        <div className="w-1/2 flex flex-col border-l h-full">
           <div className="border-b border-gray-100 bg-white">
             <div className="h-12 px-4 flex items-center gap-4">
               <div className="flex items-center gap-2 border-r pr-4">
@@ -440,13 +440,16 @@ const ProjectEditor = () => {
             </div>
           </div>
 
-          <div className="flex-1 overflow-auto">
-            {renderGrid()}
+          <div className="flex-1 overflow-hidden">
+            {/* {renderGrid()} */}
+            <div className="h-full overflow-auto"> {/* Added container with scroll */}
+              {renderGrid()}
+            </div>
           </div>
         </div>
       </div>
 
-      <div className={`border-t border-gray-100 bg-white transition-all duration-300 ${sidebarOpen ? 'h-48' : 'h-12'}`}>
+      <div className={`border-t border-gray-100 bg-white transition-all duration-300 fixed bottom-0 left-0 right-0 z-10 ${sidebarOpen ? 'h-48' : 'h-12'}`}>
         <div className="h-12 border-b border-gray-100 flex items-center justify-between px-4">
           <div className="flex items-center gap-2">
             <Table size={16} className="text-gray-400" />

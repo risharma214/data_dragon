@@ -9,6 +9,7 @@ import {
   LogOut 
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import Dialog from './Dialog';
 
 const DashboardPage = ({ onNewProject, onOpenProject }) => {
   const navigate = useNavigate();
@@ -17,7 +18,16 @@ const DashboardPage = ({ onNewProject, onOpenProject }) => {
   const [error, setError] = useState(null);
   const [userInfo, setUserInfo] = useState(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  const [activeProject, setActiveProject] = useState(null);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [showRenameDialog, setShowRenameDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [newProjectName, setNewProjectName] = useState('');
+  const [projectToEdit, setProjectToEdit] = useState(null);
   const dropdownRef = useRef(null);
+
+
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -36,7 +46,7 @@ const DashboardPage = ({ onNewProject, onOpenProject }) => {
     } else {
         navigate('/login');
     }
-}, [navigate]);
+  }, [navigate]);
 
 
   // Fetch projects when user info is available
@@ -103,6 +113,267 @@ const DashboardPage = ({ onNewProject, onOpenProject }) => {
     navigate('/');
   };
 
+  // const handleRenameProject = async () => {
+  //   try {
+  //     console.log('Attempting to rename project:', activeProject._id, newProjectName); // Debug log
+      
+  //     const response = await fetch(`http://localhost:3001/api/projects/${activeProject._id}/rename`, {
+  //       method: 'PATCH',
+  //       headers: {
+  //         'Content-Type': 'application/json'
+  //       },
+  //       body: JSON.stringify({ newName: newProjectName })
+  //     });
+
+  //     if (!response.ok) {
+  //       const errorData = await response.json();
+  //       throw new Error(errorData.error || 'Failed to rename project');
+  //     }
+
+  //     const updatedProject = await response.json();
+
+  //     // Update local state
+  //     setProjects(projects.map(project => 
+  //       project._id === activeProject._id 
+  //         ? { ...project, name: updatedProject.name }
+  //         : project
+  //     ));
+
+  //     setShowRenameDialog(false);
+  //     setNewProjectName('');
+      
+  //   } catch (error) {
+  //     console.error('Error renaming project:', error);
+  //     // Add error handling here (e.g., show error message to user)
+  //   }
+  // };
+
+  const handleRenameProject = async () => {
+    console.log('Starting rename with:', { activeProject, newProjectName }); // Debug log
+    
+    if (!newProjectName.trim()) {
+      console.log('Empty project name, aborting');
+      return;
+    }
+  
+    try {
+      const response = await fetch(`http://localhost:3001/api/projects/${activeProject._id}/rename`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ newName: newProjectName.trim() })
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to rename project');
+      }
+  
+      const updatedProject = await response.json();
+      console.log('Rename successful:', updatedProject); // Debug log
+  
+      // Update local state
+      setProjects(projects.map(project => 
+        project._id === activeProject._id 
+          ? { ...project, name: updatedProject.name }
+          : project
+      ));
+  
+      setShowRenameDialog(false);
+      setNewProjectName('');
+      
+    } catch (error) {
+      console.error('Error renaming project:', error);
+      // Add error handling here (e.g., show error message to user)
+    }
+  };
+
+
+  const handleDeleteProject = async () => {
+    try {
+      const response = await fetch(`http://localhost:3001/api/projects/${activeProject._id}`, {
+        method: 'DELETE'
+      });
+  
+      if (!response.ok) {
+        throw new Error('Failed to delete project');
+      }
+  
+      // Update local state
+      setProjects(projects.filter(project => project._id !== activeProject._id));
+      
+      setShowDeleteDialog(false);
+      setActiveProject(null);
+      
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      // You might want to show an error message to the user here
+    }
+  };
+  
+  // const RenameDialog = () => {
+  //   const [localProjectName, setLocalProjectName] = useState(projectToEdit?.name || '');
+  
+  //   useEffect(() => {
+  //     if (projectToEdit) {
+  //       setLocalProjectName(projectToEdit.name);
+  //     }
+  //   }, [projectToEdit]);
+  
+  //   return (
+  //     <Dialog 
+  //       isOpen={showRenameDialog} 
+  //       onClose={() => {
+  //         setShowRenameDialog(false);
+  //         setProjectToEdit(null);
+  //       }}
+  //     >
+  //       <div className="p-6">
+  //         <h3 className="text-lg font-medium mb-4">Rename Project</h3>
+  //         <input
+  //           type="text"
+  //           value={localProjectName}
+  //           onChange={(e) => setLocalProjectName(e.target.value)}
+  //           placeholder="Enter new name"
+  //           className="w-full px-3 py-2 border rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+  //         />
+  //         <div className="flex justify-end gap-3">
+  //           <button
+  //             onClick={() => {
+  //               setShowRenameDialog(false);
+  //               setProjectToEdit(null);
+  //             }}
+  //             className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg"
+  //           >
+  //             Cancel
+  //           </button>
+  //           <button
+  //             onClick={() => {
+  //               handleRenameProject(localProjectName);
+  //               setShowRenameDialog(false);
+  //               setProjectToEdit(null);
+  //             }}
+  //             className="px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+  //           >
+  //             Rename
+  //           </button>
+  //         </div>
+  //       </div>
+  //     </Dialog>
+  //   );
+  // };
+
+  const RenameDialog = () => {
+    const [localProjectName, setLocalProjectName] = useState(activeProject?.name || '');
+
+    useEffect(() => {
+      if (activeProject) {
+        setLocalProjectName(activeProject.name);
+      }
+    }, [activeProject]);
+
+    const handleRename = async () => {
+      if (!localProjectName.trim()) return;
+
+      try {
+        const response = await fetch(`http://localhost:3001/api/projects/${activeProject._id}/rename`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ newName: localProjectName.trim() })
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to rename project');
+        }
+
+        const updatedProject = await response.json();
+
+        // Update local state
+        setProjects(projects.map(project => 
+          project._id === activeProject._id 
+            ? { ...project, name: updatedProject.name }
+            : project
+        ));
+
+        setShowRenameDialog(false);
+        
+      } catch (error) {
+        console.error('Error renaming project:', error);
+      }
+    };
+
+    return (
+      <Dialog 
+        isOpen={showRenameDialog} 
+        onClose={() => setShowRenameDialog(false)}
+      >
+        <div className="p-6">
+          <h3 className="text-lg font-medium mb-4">Rename Project</h3>
+          <input
+            type="text"
+            value={localProjectName}
+            onChange={(e) => setLocalProjectName(e.target.value)}
+            placeholder="Enter new name"
+            className="w-full px-3 py-2 border rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            autoFocus
+          />
+          <div className="flex justify-end gap-3">
+            <button
+              onClick={() => setShowRenameDialog(false)}
+              className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleRename}
+              disabled={!localProjectName.trim()}
+              className="px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Rename
+            </button>
+          </div>
+        </div>
+      </Dialog>
+    );
+  };
+
+  const DeleteDialog = () => (
+    <Dialog 
+      isOpen={showDeleteDialog} 
+      onClose={() => setShowDeleteDialog(false)}
+    >
+      <div className="p-6">
+        <h3 className="text-lg font-medium mb-2">Delete Project</h3>
+        <p className="text-gray-500 mb-4">
+          Are you sure you want to delete this project? This action cannot be undone.
+        </p>
+        <div className="flex justify-end gap-3">
+          <button
+            onClick={() => setShowDeleteDialog(false)}
+            className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleDeleteProject}
+            className="px-4 py-2 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    </Dialog>
+  );
+
+  
+  
+  // // Add dialogs to the return statement
+  // {showRenameDialog && <RenameDialog />}
+  // {showDeleteDialog && <DeleteDialog />}
+
   // Helper function to format dates
   const formatTimeAgo = (date) => {
     const now = new Date();
@@ -116,6 +387,8 @@ const DashboardPage = ({ onNewProject, onOpenProject }) => {
     }
     if (diffDays === 1) return 'Yesterday';
     if (diffDays < 7) return `${diffDays} days ago`;
+    console.log(`diffdays = ${diffDays}`)
+    console.log(`date recieved = ${date}`)
     return `${Math.floor(diffDays / 7)} weeks ago`;
   };
 
@@ -242,12 +515,12 @@ const DashboardPage = ({ onNewProject, onOpenProject }) => {
               }}
             >
               {projects.map((project) => (
-                <button
-                  key={project.id}
-                  onClick={() => handleOpenProject(project)}
-                  className="group text-left w-full h-full"
-                >
-                  <div className="w-full h-full rounded-lg border border-gray-200 p-4 transition-all duration-300 relative bg-white">
+                <div key={project._id || project.id} className="group relative">
+                  {/* Project Card */}
+                  <div 
+                    onClick={() => handleOpenProject(project)}
+                    className="w-full h-full rounded-lg border border-gray-200 p-4 transition-all duration-300 relative bg-white cursor-pointer"
+                  >
                     {/* Gradient border on hover */}
                     <div className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{
                       background: 'linear-gradient(to right, #ec4899, #3b82f6, #a855f7)',
@@ -268,17 +541,65 @@ const DashboardPage = ({ onNewProject, onOpenProject }) => {
                         </div>
                         <div className="flex items-center gap-2 text-sm text-gray-500">
                           <Clock size={14} />
-                          <span>{formatTimeAgo(project.lastEdited)}</span>
+                          <span>{formatTimeAgo(project.updatedAt)}</span>
                         </div>
                       </div>
                     </div>
                   </div>
-                </button>
+
+                  {/* More Options Button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveProject(project);
+                      setShowDropdown(project._id === activeProject?._id ? !showDropdown : true);
+                    }}
+                    className="absolute top-2 right-2 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-gray-100 transition-all z-10"
+                  >
+                    <svg className="w-4 h-4 text-gray-500" viewBox="0 0 16 16">
+                      <circle cx="8" cy="2.5" r="1.5" />
+                      <circle cx="8" cy="8" r="1.5" />
+                      <circle cx="8" cy="13.5" r="1.5" />
+                    </svg>
+                  </button>
+
+                  {/* Dropdown Menu */}
+                  {showDropdown && activeProject && activeProject._id === project._id && (
+                    <div 
+                      onClick={(e) => e.stopPropagation()}
+                      className="absolute top-12 right-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-50"
+                    >
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowDropdown(false);
+                          setProjectToEdit(activeProject);
+                          setShowRenameDialog(true);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      >
+                        Rename
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowDropdown(false);
+                          setShowDeleteDialog(true);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           )}
         </div>
       </main>
+      {showRenameDialog && <RenameDialog />}
+      {showDeleteDialog && <DeleteDialog />}
     </div>
   );
 };
