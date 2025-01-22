@@ -39,6 +39,8 @@ const ProjectEditor = () => {
   const [projectData, setProjectData] = useState(null);
   const [tables, setTables] = useState([]);
   const [currentTableData, setCurrentTableData] = useState(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isCleaningUp, setIsCleaningUp] = useState(false);
 
 
   // In Workspace.js, update the initial data fetch
@@ -59,23 +61,31 @@ const ProjectEditor = () => {
         if (data.files && data.files.length > 0) {
           const currentFile = fileId 
             ? data.files.find(f => f.id === fileId)
-            : data.files[0];  // Use first file if no fileId specified
+            : data.files[0];
             
-          console.log('Current file:', currentFile);
-          
           if (currentFile?.tables?.length > 0) {
-            console.log('Setting tables:', currentFile.tables);
-            setTables(currentFile.tables);
-            setSelectedTable(currentFile.tables[0].id);
-            console.log('Selected table ID:', currentFile.tables[0].id);
+            // Sort tables by page number
+            const sortedTables = [...currentFile.tables].sort((a, b) => {
+              // First by page number
+              if (a.pageNumber !== b.pageNumber) {
+                return a.pageNumber - b.pageNumber;
+              }
+              // If on same page, can add additional sorting logic here
+              return 0;
+            });
+            setTables(sortedTables);
+            setSelectedTable(sortedTables[0].id);
           }
         }
+
       } catch (err) {
         console.error('Error fetching project:', err);
         setError('Failed to load project data');
       } finally {
         setLoading(false);
       }
+
+
     };
 
     fetchProjectData();
@@ -94,7 +104,11 @@ const ProjectEditor = () => {
         if (!response.ok) throw new Error('Failed to fetch table data');
         
         const data = await response.json();
-        console.log('Received table data:', data);
+        console.log('Received table data structure:', {
+          currentData: data.currentData ? `${data.currentData.length}x${data.currentData[0]?.length}` : 'none',
+          originalData: data.originalData ? `${data.originalData.length}x${data.originalData[0]?.length}` : 'none',
+          structure: data.structure
+        });
         setCurrentTableData(data);
         if (data.pageNumber) {
           setCurrentPage(data.pageNumber);
@@ -131,9 +145,45 @@ const ProjectEditor = () => {
     fetchPdfUrl();
   }, [fileId, projectData]);
 
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (hasUnsavedChanges && !isCleaningUp) {
+        e.preventDefault();
+        e.returnValue = '';
+        return '';
+      }
+    };
+  
+    const handleNavigation = (e) => {
+      if (hasUnsavedChanges && !isCleaningUp) {
+        if (!window.confirm('You have unsaved changes. Do you want to leave without saving?')) {
+          e.preventDefault();
+        } else {
+          setIsCleaningUp(true);
+        }
+      }
+    };
+  
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('popstate', handleNavigation);
+  
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', handleNavigation);
+    };
+  }, [hasUnsavedChanges, isCleaningUp]);
+
   const handleBackNavigation = () => {
-    navigate('/dashboard');
+    if (hasUnsavedChanges) {
+      if (window.confirm('You have unsaved changes. Do you want to leave without saving?')) {
+        setIsCleaningUp(true);
+        navigate('/dashboard');
+      }
+    } else {
+      navigate('/dashboard');
+    }
   };
+
 
   const handleTableSelect = (tableId) => {
     setSelectedTable(tableId);
@@ -148,10 +198,40 @@ const ProjectEditor = () => {
       ...currentTableData,
       currentData: newData
     });
+    setHasUnsavedChanges(true);
   };
 
   const handleCellClick = (rowIndex, colIndex) => {
     setActiveCell({ row: rowIndex, col: colIndex });
+  };
+
+  const handleSave = async () => {
+    if (!selectedTable || !currentTableData) return;
+  
+    try {
+      const response = await fetch(`http://localhost:3001/api/tables/${selectedTable}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          currentData: currentTableData.currentData,
+          structure: currentTableData.structure
+        })
+      });
+  
+      if (!response.ok) {
+        throw new Error('Failed to save changes');
+      }
+  
+      setHasUnsavedChanges(false);
+
+      console.log('Saved table');
+      // Optional: Show success message
+    } catch (error) {
+      console.error('Error saving table:', error);
+      // Show error message to user
+    }
   };
 
   const addRow = () => {
@@ -252,7 +332,15 @@ const ProjectEditor = () => {
   };
 
   const renderGrid = () => {
-    console.log('Rendering grid with data:', currentTableData); // Add this
+    console.log('Rendering grid with currentTableData:', {
+      hasData: !!currentTableData,
+      currentData: currentTableData?.currentData 
+        ? `${currentTableData.currentData.length}x${currentTableData.currentData[0]?.length}` 
+        : 'none',
+      firstRow: currentTableData?.currentData?.[0],
+      structure: currentTableData?.structure
+    });
+
     if (!currentTableData) return null;
   
     const { currentData, structure } = currentTableData;
@@ -354,9 +442,17 @@ const ProjectEditor = () => {
               <Eye size={16} />
               Preview
             </button>
-            <button className="px-3 py-1.5 text-sm bg-black text-white rounded-lg hover:bg-gray-900 transition-colors flex items-center gap-2">
+            <button 
+              onClick={handleSave}
+              className={`px-3 py-1.5 text-sm ${
+                hasUnsavedChanges 
+                  ? 'bg-black text-white hover:bg-gray-900' 
+                  : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              } rounded-lg transition-colors flex items-center gap-2`}
+              disabled={!hasUnsavedChanges}
+            >
               <Save size={16} />
-              Save
+              {hasUnsavedChanges ? 'Save Changes' : 'Saved'}
             </button>
             {/* <button className="px-3 py-1.5 text-sm text-white bg-green-500 rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2">
               <Download size={16} />
@@ -485,9 +581,12 @@ const ProjectEditor = () => {
                   </div>
                   <div className="space-y-1">
                     <div className="font-medium text-sm truncate">
-                      Table {table.structure?.rowCount}x{table.structure?.columnCount}
+                      {table.caption?.text || `Table ${table.structure?.rowCount}x${table.structure?.columnCount}`}
                     </div>
-                    <div className="text-xs text-gray-500">Page {table.pageNumber}</div>
+                    <div className="flex items-center justify-between text-xs text-gray-500">
+                      <span>Page {table.pageNumber}</span>
+                      <span>{table.structure?.rowCount}x{table.structure?.columnCount}</span>
+                    </div>
                   </div>
                 </button>
               ))}

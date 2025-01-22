@@ -32,6 +32,10 @@ const fileSchema = new mongoose.Schema({
     pageCount: {
         type: Number,
         default: 1  // Default 1 for images and CSVs
+    },
+    tableCount: {
+        type: Number,
+        default: 0
     }
 }, {
     timestamps: true
