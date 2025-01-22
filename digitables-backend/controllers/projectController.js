@@ -183,8 +183,8 @@ const getProjectDetails = async (req, res) => {
         console.log('Processing files for project:', projectData._id);
         
         // Transform files array to include table count and processing status
+        // In projectController.js, update the table mapping section
         projectData.files = projectData.files.map(file => {
-            console.log('Processing file:', file._id, 'Tables:', file.tables?.length || 0);
             return {
                 id: file._id,
                 name: file.originalName,
@@ -193,10 +193,10 @@ const getProjectDetails = async (req, res) => {
                 processingStatus: file.processingStatus,
                 tableCount: file.tables?.length || 0,
                 tables: (file.tables || []).map(table => {
-                    console.log('Processing table:', table._id, 'Structure:', table.structure);
                     return {
                         id: table._id,
                         pageNumber: table.pageNumber,
+                        caption: table.caption,  // Add this
                         boundingBox: table.boundingBox,
                         structure: {
                             rowCount: table.structure?.rowCount,

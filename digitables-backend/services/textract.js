@@ -79,21 +79,21 @@ const getDocumentResults = async (jobId) => {
       nextToken = response.NextToken;
     } while (nextToken);
 
-    // Save the raw results to a file for analysis
-    const fs = require('fs');
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const outputPath = `./textract-results-${timestamp}.json`;
+    // save raw results to a file for analysis
+    // const fs = require('fs');
+    // const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    // const outputPath = `./textract-results-${timestamp}.json`;
     
-    fs.writeFileSync(
-      outputPath,
-      JSON.stringify({
-        timestamp,
-        jobId,
-        blocks: results
-      }, null, 2)
-    );
+    // fs.writeFileSync(
+    //   outputPath,
+    //   JSON.stringify({
+    //     timestamp,
+    //     jobId,
+    //     blocks: results
+    //   }, null, 2)
+    // );
 
-    console.log(`Raw Textract results saved to: ${outputPath}`);
+    // console.log(`Raw Textract results saved to: ${outputPath}`);
 
     return processTextractResults(results);
   } catch (error) {
