@@ -545,7 +545,7 @@ const ProjectEditor = () => {
         </div>
       </div>
 
-      <div className={`border-t border-gray-100 bg-white transition-all duration-300 fixed bottom-0 left-0 right-0 z-10 ${sidebarOpen ? 'h-48' : 'h-12'}`}>
+      <div className={`border-t border-gray-100 bg-white transition-all duration-300 fixed bottom-0 left-0 right-0 z-10 ${sidebarOpen ? 'h-64' : 'h-12'}`}>
         <div className="h-12 border-b border-gray-100 flex items-center justify-between px-4">
           <div className="flex items-center gap-2">
             <Table size={16} className="text-gray-400" />
