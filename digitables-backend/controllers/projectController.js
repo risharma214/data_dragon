@@ -172,7 +172,7 @@ const getProjectDetails = async (req, res) => {
             }
         ]);
 
-        console.log('Raw project data:', JSON.stringify(project, null, 2));
+        // console.log('Raw project data:', JSON.stringify(project, null, 2));
 
         if (!project || project.length === 0) {
             console.log('No project found with ID:', projectId);
@@ -182,8 +182,6 @@ const getProjectDetails = async (req, res) => {
         const projectData = project[0];
         console.log('Processing files for project:', projectData._id);
         
-        // Transform files array to include table count and processing status
-        // In projectController.js, update the table mapping section
         projectData.files = projectData.files.map(file => {
             return {
                 id: file._id,

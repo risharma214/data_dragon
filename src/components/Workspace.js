@@ -41,6 +41,8 @@ const ProjectEditor = () => {
   const [currentTableData, setCurrentTableData] = useState(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isCleaningUp, setIsCleaningUp] = useState(false);
+  const [highlights, setHighlights] = useState({});
+  const [showHighlightMenu, setShowHighlightMenu] = useState(null);
 
 
   // In Workspace.js, update the initial data fetch
@@ -110,6 +112,13 @@ const ProjectEditor = () => {
           structure: data.structure
         });
         setCurrentTableData(data);
+
+        const highlightMap = {};
+        data.structure?.highlights?.forEach(h => {
+          highlightMap[`${h.row}-${h.col}`] = h.color;
+        });
+        setHighlights(highlightMap);
+
         if (data.pageNumber) {
           setCurrentPage(data.pageNumber);
         }
@@ -173,6 +182,43 @@ const ProjectEditor = () => {
     };
   }, [hasUnsavedChanges, isCleaningUp]);
 
+  const handleHighlight = (rowIndex, colIndex, color) => {
+    setHighlights(prev => {
+      const key = `${rowIndex}-${colIndex}`;
+      const newHighlights = { ...prev };
+      
+      if (newHighlights[key] === color) {
+        delete newHighlights[key];
+      } else {
+        newHighlights[key] = color;
+      }
+      
+      setHasUnsavedChanges(true);
+      return newHighlights;
+    });
+  };
+
+  const HighlightMenu = ({ onSelect, onRemove }) => (
+    <div className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 p-1 z-50">
+      <div className="grid grid-cols-4 gap-1">
+        {['#ffeb3b', '#4caf50', '#f44336', '#2196f3'].map(color => (
+          <button
+            key={color}
+            onClick={() => onSelect(color)}
+            className="w-6 h-6 rounded-full"
+            style={{ backgroundColor: color }}
+          />
+        ))}
+      </div>
+      <button
+        onClick={onRemove}
+        className="w-full mt-1 px-2 py-1 text-xs text-gray-600 hover:bg-gray-50 rounded"
+      >
+        Remove
+      </button>
+    </div>
+  );
+
   const handleBackNavigation = () => {
     if (hasUnsavedChanges) {
       if (window.confirm('You have unsaved changes. Do you want to leave without saving?')) {
@@ -205,10 +251,48 @@ const ProjectEditor = () => {
     setActiveCell({ row: rowIndex, col: colIndex });
   };
 
+  // const handleSave = async () => {
+  //   if (!selectedTable || !currentTableData) return;
+  
+  //   try {
+  //     const response = await fetch(`http://localhost:3001/api/tables/${selectedTable}`, {
+  //       method: 'PATCH',
+  //       headers: {
+  //         'Content-Type': 'application/json'
+  //       },
+  //       body: JSON.stringify({
+  //         currentData: currentTableData.currentData,
+  //         structure: currentTableData.structure
+  //       })
+  //     });
+  
+  //     if (!response.ok) {
+  //       throw new Error('Failed to save changes');
+  //     }
+  
+  //     setHasUnsavedChanges(false);
+
+  //     console.log('Saved table');
+  //     // Optional: Show success message
+  //   } catch (error) {
+  //     console.error('Error saving table:', error);
+  //     // Show error message to user
+  //   }
+  // };
+
   const handleSave = async () => {
     if (!selectedTable || !currentTableData) return;
   
     try {
+      const highlightArray = Object.entries(highlights).map(([key, color]) => {
+        const [row, col] = key.split('-');
+        return {
+          row: parseInt(row),
+          col: parseInt(col),
+          color
+        };
+      });
+  
       const response = await fetch(`http://localhost:3001/api/tables/${selectedTable}`, {
         method: 'PATCH',
         headers: {
@@ -216,7 +300,10 @@ const ProjectEditor = () => {
         },
         body: JSON.stringify({
           currentData: currentTableData.currentData,
-          structure: currentTableData.structure
+          structure: {
+            ...currentTableData.structure,
+            highlights: highlightArray
+          }
         })
       });
   
@@ -225,12 +312,9 @@ const ProjectEditor = () => {
       }
   
       setHasUnsavedChanges(false);
-
       console.log('Saved table');
-      // Optional: Show success message
     } catch (error) {
       console.error('Error saving table:', error);
-      // Show error message to user
     }
   };
 
@@ -381,26 +465,63 @@ const ProjectEditor = () => {
               </div>
               
               {/* Row Data */}
-              {row.map((cell, colIndex) => (
-                <div 
-                  key={colIndex} 
-                  className={`w-40 h-8 border-r border-b border-gray-200 ${
-                    activeCell.col === colIndex && activeCell.row !== rowIndex ? 'bg-blue-50/50' : ''
-                  }`}
-                  onClick={() => handleCellClick(rowIndex, colIndex)}
-                >
-                  <input
-                    type="text"
-                    value={cell || ''}
-                    onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
-                    className={`w-full h-full px-2 focus:outline-none focus:ring-1 focus:ring-blue-500 ${
-                      activeCell.row === rowIndex && activeCell.col === colIndex
-                        ? 'bg-blue-50 ring-1 ring-blue-500'
-                        : ''
+              {row.map((cell, colIndex) => {
+                const highlightKey = `${rowIndex}-${colIndex}`;
+                const highlightColor = highlights[highlightKey];
+                const cellConfidence = currentTableData.textractMetadata?.cells?.[rowIndex]?.[colIndex]?.confidence || 100;
+                const isLowConfidence = cellConfidence < 80;  // Threshold for confidence
+
+                return (
+                  <div 
+                    key={colIndex} 
+                    className={`w-40 h-8 border-r border-b border-gray-200 relative ${
+                      activeCell.col === colIndex && activeCell.row !== rowIndex ? 'bg-blue-50/50' : ''
                     }`}
-                  />
-                </div>
-              ))}
+                    onClick={() => handleCellClick(rowIndex, colIndex)}
+                    style={{
+                      backgroundColor: highlightColor ? `${highlightColor}40` : // 40 is hex for 25% opacity
+                                      isLowConfidence ? '#f4433640' : 
+                                      undefined
+                    }}
+                  >
+                    <input
+                      type="text"
+                      value={cell || ''}
+                      onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
+                      className={`w-full h-full px-2 focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                        activeCell.row === rowIndex && activeCell.col === colIndex
+                          ? 'bg-transparent ring-1 ring-blue-500'
+                          : 'bg-transparent'
+                      }`}
+                    />
+                    {activeCell.row === rowIndex && activeCell.col === colIndex && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowHighlightMenu(`${rowIndex}-${colIndex}`);
+                        }}
+                        className="absolute top-1 right-1 w-4 h-4 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center"
+                      >
+                        <span className="block w-2 h-2 rounded-full" style={{ 
+                          backgroundColor: highlightColor || 'white' 
+                        }} />
+                      </button>
+                    )}
+                    {showHighlightMenu === `${rowIndex}-${colIndex}` && (
+                      <HighlightMenu 
+                        onSelect={(color) => {
+                          handleHighlight(rowIndex, colIndex, color);
+                          setShowHighlightMenu(null);
+                        }}
+                        onRemove={() => {
+                          handleHighlight(rowIndex, colIndex, null);
+                          setShowHighlightMenu(null);
+                        }}
+                      />
+                    )}
+                  </div>
+                );
+              })}
             </div>
           ))}
         </div>
