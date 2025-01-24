@@ -68,7 +68,9 @@ const ProjectEditor = () => {
         if (!response.ok) throw new Error('Failed to fetch project data');
         
         const data = await response.json();
-        console.log('Full Project data:', data);
+
+        // console.log('Full Project data:', data);
+        
         setProjectData(data);
         
         if (data.files && data.files.length > 0) {
@@ -440,14 +442,14 @@ const ProjectEditor = () => {
   };
 
   const renderGrid = () => {
-    console.log('Rendering grid with currentTableData:', {
-      hasData: !!currentTableData,
-      currentData: currentTableData?.currentData 
-        ? `${currentTableData.currentData.length}x${currentTableData.currentData[0]?.length}` 
-        : 'none',
-      firstRow: currentTableData?.currentData?.[0],
-      structure: currentTableData?.structure
-    });
+    // console.log('Rendering grid with currentTableData:', {
+    //   hasData: !!currentTableData,
+    //   currentData: currentTableData?.currentData 
+    //     ? `${currentTableData.currentData.length}x${currentTableData.currentData[0]?.length}` 
+    //     : 'none',
+    //   firstRow: currentTableData?.currentData?.[0],
+    //   structure: currentTableData?.structure
+    // });
   
     if (!currentTableData) return null;
   
