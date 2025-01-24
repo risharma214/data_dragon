@@ -407,6 +407,66 @@ const ProjectEditor = () => {
     }
   };
 
+  const addColumn = () => {
+    if (!currentTableData) return;
+    
+    const newData = currentTableData.currentData.map(row => {
+      const newRow = [...row];
+      if (activeCell.col !== null) {
+        // Insert after the active column
+        newRow.splice(activeCell.col + 1, 0, '');
+      } else {
+        // Add to the end if no column is selected
+        newRow.push('');
+      }
+      return newRow;
+    });
+    
+    if (activeCell.col !== null) {
+      // Update active cell to the new column
+      setActiveCell({ row: activeCell.row, col: activeCell.col + 1 });
+    }
+    
+    setCurrentTableData({
+      ...currentTableData,
+      currentData: newData,
+      structure: {
+        ...currentTableData.structure,
+        columnCount: currentTableData.structure.columnCount + 1
+      }
+    });
+    
+    setHasUnsavedChanges(true);
+  };
+  
+  const deleteColumn = (colIndex) => {
+    if (!currentTableData) return;
+    
+    const newData = currentTableData.currentData.map(row => {
+      const newRow = [...row];
+      newRow.splice(colIndex, 1);
+      return newRow;
+    });
+    
+    setCurrentTableData({
+      ...currentTableData,
+      currentData: newData,
+      structure: {
+        ...currentTableData.structure,
+        columnCount: currentTableData.structure.columnCount - 1
+      }
+    });
+    
+    if (activeCell.col === colIndex) {
+      setActiveCell({ row: activeCell.row, col: null });
+    } else if (activeCell.col > colIndex) {
+      // Adjust active cell if it was after the deleted column
+      setActiveCell({ row: activeCell.row, col: activeCell.col - 1 });
+    }
+    
+    setHasUnsavedChanges(true);
+  };
+
   const downloadCSV = () => {
     if (!currentTableData || !currentTableData.currentData) return;
   
@@ -681,14 +741,16 @@ const ProjectEditor = () => {
           <div className={`border-b ${isDarkMode ? 'border-gray-700 bg-gray-900' : 'border-gray-100 bg-white'}`}>
             <div className="h-12 px-4 flex items-center gap-4">
               <div className={`flex items-center gap-2 border-r ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} pr-4`}>
-              <button 
+                {/* Row Operations */}
+                <button 
                   onClick={addRow}
                   className={`p-1.5 ${
                     isDarkMode ? 'hover:bg-gray-800 text-gray-300' : 'hover:bg-gray-100 text-gray-600'
-                  } rounded-lg transition-colors`}
+                  } rounded-lg transition-colors group relative`}
                   title="Add Row"
                 >
-                  <Plus size={16} />
+                  <Plus size={16} className="-rotate-90" />
+                  <span className="sr-only">Add Row</span>
                 </button>
                 <button 
                   className={`p-1.5 ${
@@ -697,7 +759,30 @@ const ProjectEditor = () => {
                   title="Delete Selected Row"
                   onClick={() => activeCell.row !== null && deleteRow(activeCell.row)}
                 >
+                  <Trash2 size={16} className="-rotate-90" />
+                  <span className="sr-only">Delete Row</span>
+                </button>
+
+                {/* Column Operations */}
+                <button 
+                  onClick={addColumn}
+                  className={`p-1.5 ${
+                    isDarkMode ? 'hover:bg-gray-800 text-gray-300' : 'hover:bg-gray-100 text-gray-600'
+                  } rounded-lg transition-colors`}
+                  title="Add Column"
+                >
+                  <Plus size={16} />
+                  <span className="sr-only">Add Column</span>
+                </button>
+                <button 
+                  className={`p-1.5 ${
+                    isDarkMode ? 'hover:bg-gray-800 text-gray-300' : 'hover:bg-gray-100 text-gray-600'
+                  } rounded-lg transition-colors`}
+                  title="Delete Selected Column"
+                  onClick={() => activeCell.col !== null && deleteColumn(activeCell.col)}
+                >
                   <Trash2 size={16} />
+                  <span className="sr-only">Delete Column</span>
                 </button>
               </div>
 
