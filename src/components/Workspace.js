@@ -752,7 +752,7 @@ const ProjectEditor = () => {
         <div className={`h-12 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-100'} flex items-center justify-between px-4`}>
           <div className="flex items-center gap-2">
             <Table size={16} className={isDarkMode ? 'text-gray-400' : 'text-gray-400'} />
-            <span className="font-medium text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}">Tables</span>
+            <span className={`font-medium text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>Tables</span>
           </div>
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
