@@ -4,7 +4,6 @@ const Table = require('../models/Table');
 const { S3Client, DeleteObjectCommand } = require('@aws-sdk/client-s3');
 const { ObjectId } = require('mongodb');
 
-// Initialize S3 client
 const s3Client = new S3Client({
     region: process.env.AWS_REGION,
     credentials: {
@@ -22,7 +21,6 @@ const getUserProjects = async (req, res) => {
             return res.status(400).json({ error: 'User ID is required' });
         }
 
-        // Direct MongoDB query without aggregation
         const projects = await Project.find({ 
             userId: new ObjectId(userId) 
         });
@@ -41,10 +39,10 @@ const getUserProjects = async (req, res) => {
 
 const renameProject = async (req, res) => {
     try {
-        const { projectId } = req.params;  // Get from URL params
-        const { newName } = req.body;      // Get from request body
+        const { projectId } = req.params;  
+        const { newName } = req.body;    
 
-        console.log('Renaming project:', { projectId, newName }); // Debug log
+        console.log('Renaming project:', { projectId, newName });
 
         if (!newName || newName.trim().length === 0) {
             return res.status(400).json({ error: 'Project name cannot be empty' });
@@ -53,7 +51,7 @@ const renameProject = async (req, res) => {
         const project = await Project.findByIdAndUpdate(
             projectId,
             { name: newName.trim() },
-            { new: true }  // Return the updated document
+            { new: true }  
         );
 
         if (!project) {
@@ -80,12 +78,10 @@ const deleteProject = async (req, res) => {
             return res.status(404).json({ error: 'Project not found' });
         }
 
-        // Find all files associated with the project
         const files = await File.find({ projectId });
 
         // Delete files from S3 and collect all tableIds
         const deletionPromises = files.map(async (file) => {
-            // Delete from S3
             try {
                 const deleteCommand = new DeleteObjectCommand({
                     Bucket: process.env.S3_BUCKET_NAME,
@@ -94,7 +90,7 @@ const deleteProject = async (req, res) => {
                 await s3Client.send(deleteCommand);
             } catch (error) {
                 console.error(`Failed to delete file ${file.s3Key} from S3:`, error);
-                // Continue with other deletions even if S3 deletion fails
+                // continue with other deletions even if S3 deletion fails
             }
 
             // Find and delete all tables associated with this file

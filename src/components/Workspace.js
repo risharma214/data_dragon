@@ -276,34 +276,6 @@ const ProjectEditor = () => {
     setActiveCell({ row: rowIndex, col: colIndex });
   };
 
-  // const handleSave = async () => {
-  //   if (!selectedTable || !currentTableData) return;
-  
-  //   try {
-  //     const response = await fetch(`http://localhost:3001/api/tables/${selectedTable}`, {
-  //       method: 'PATCH',
-  //       headers: {
-  //         'Content-Type': 'application/json'
-  //       },
-  //       body: JSON.stringify({
-  //         currentData: currentTableData.currentData,
-  //         structure: currentTableData.structure
-  //       })
-  //     });
-  
-  //     if (!response.ok) {
-  //       throw new Error('Failed to save changes');
-  //     }
-  
-  //     setHasUnsavedChanges(false);
-
-  //     console.log('Saved table');
-  //     // Optional: Show success message
-  //   } catch (error) {
-  //     console.error('Error saving table:', error);
-  //     // Show error message to user
-  //   }
-  // };
 
   const handleSave = async () => {
     if (!selectedTable || !currentTableData) return;
@@ -342,23 +314,6 @@ const ProjectEditor = () => {
       console.error('Error saving table:', error);
     }
   };
-
-  // const addRow = () => {
-  //   if (!currentTableData) return;
-    
-  //   const newData = [...currentTableData.currentData];
-  //   const newRow = new Array(currentTableData.structure.columnCount).fill('');
-  //   newData.push(newRow);
-    
-  //   setCurrentTableData({
-  //     ...currentTableData,
-  //     currentData: newData,
-  //     structure: {
-  //       ...currentTableData.structure,
-  //       rowCount: currentTableData.structure.rowCount + 1
-  //     }
-  //   });
-  // };
 
   const addRow = () => {
     if (!currentTableData) return;
@@ -423,7 +378,6 @@ const ProjectEditor = () => {
     });
     
     if (activeCell.col !== null) {
-      // Update active cell to the new column
       setActiveCell({ row: activeCell.row, col: activeCell.col + 1 });
     }
     
@@ -472,13 +426,11 @@ const ProjectEditor = () => {
   
     const { currentData, structure } = currentTableData;
   
-    // Convert table data to CSV format
     const csvContent = [
       Array.from({ length: structure.columnCount }, (_, i) => String.fromCharCode(65 + i)).join(","), // Header row
       ...currentData.map(row => row.map(cell => `"${cell || ""}"`).join(",")) // Data rows
     ].join("\n");
   
-    // Create a blob and trigger a download
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
@@ -879,16 +831,6 @@ const ProjectEditor = () => {
               </div>
             </div>
           </div>
-
-          {/* <div className="flex-1 overflow-hidden flex flex-col">
-            <div className="flex-1 overflow-hidden pb-48"> 
-              <div className="h-full overflow-auto">
-                <div className="inline-block min-w-full"> 
-                  {renderGrid()}
-                </div>
-              </div>
-            </div>
-          </div> */}
         </div>
       </div>
 

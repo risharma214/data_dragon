@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 
-// Keep existing sub-schemas
 const highlightSchema = new mongoose.Schema({
     row: Number,
     col: Number,
@@ -32,7 +31,6 @@ const modificationSchema = new mongoose.Schema({
     details: mongoose.Schema.Types.Mixed
 });
 
-// Enhanced boundingBox schema to include polygon points
 const boundingBoxSchema = new mongoose.Schema({
     Height: Number,
     Left: Number,
@@ -44,7 +42,6 @@ const boundingBoxSchema = new mongoose.Schema({
     }]
 }, { _id: false });
 
-// New schema for table metadata from Textract
 
 const relationshipSchema = new mongoose.Schema({
     Type: { type: String, default: '' },
@@ -71,9 +68,6 @@ const textractMetadataSchema = new mongoose.Schema({
     }, { _id: false }
 );
 
-
-
-// Enhanced table schema
 const tableSchema = new mongoose.Schema({
     fileId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -148,7 +142,6 @@ const tableSchema = new mongoose.Schema({
     timestamps: true
 });
 
-// Add indexes for common queries
 tableSchema.index({ fileId: 1, pageNumber: 1 });
 tableSchema.index({ processingStatus: 1 });
 

@@ -15,7 +15,6 @@ const {
   
 const processDocument = async (bucketName, documentKey) => {
   try {
-    // Start async document analysis
     const startCommand = new StartDocumentAnalysisCommand({
       DocumentLocation: {
         S3Object: {
@@ -23,13 +22,12 @@ const processDocument = async (bucketName, documentKey) => {
           Name: documentKey
         }
       },
-      FeatureTypes: ['TABLES'], // Specifically request table analysis
+      FeatureTypes: ['TABLES'], // specifically request table analysis
     });
 
     const startResponse = await textractClient.send(startCommand);
     const jobId = startResponse.JobId;
 
-    // Function to check job status
     const checkJobStatus = async () => {
       const statusCommand = new GetDocumentAnalysisCommand({
         JobId: jobId
@@ -39,15 +37,14 @@ const processDocument = async (bucketName, documentKey) => {
       return statusResponse.JobStatus;
     };
 
-    // Poll until job is complete
+    // poll until job is complete
     let jobStatus;
     do {
-      await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds between checks
+      await new Promise(resolve => setTimeout(resolve, 5000));
       jobStatus = await checkJobStatus();
     } while (jobStatus === 'IN_PROGRESS');
 
     if (jobStatus === 'SUCCEEDED') {
-      // Get the results
       const results = await getDocumentResults(jobId);
       return {
         status: 'success',
@@ -102,13 +99,10 @@ const getDocumentResults = async (jobId) => {
   }
 };
 
-
-
-
 const processTextractResults = (blocks) => {
   console.log(`Processing ${blocks.length} blocks`);
 
-  // First pass: Create maps for different block types
+  // first pass: Create maps for different block types
   const tableBlocks = new Map();
   const cellBlocks = new Map();
   const lineBlocks = new Map();
@@ -138,7 +132,7 @@ const processTextractResults = (blocks) => {
     }
   });
 
-  // Second pass: Associate cells with tables and find captions
+  // second pass: associate cells with tables and find captions
 
   tableBlocks.forEach((table, tableId) => {
 
@@ -146,9 +140,8 @@ const processTextractResults = (blocks) => {
     const tableCellIds = table.Relationships?.find(rel => rel.Type === 'CHILD')?.Ids || [];
     const cells = tableCellIds
       .map(id => cellBlocks.get(id))
-      .filter(cell => cell); // Filter out any undefined cells
+      .filter(cell => cell); 
 
-    // Sort cells by row and column
     cells.sort((a, b) => {
       if (a.RowIndex === b.RowIndex) {
         return a.ColumnIndex - b.ColumnIndex;
@@ -183,11 +176,9 @@ const processTextractResults = (blocks) => {
     const rowCount = Math.max(...table.cells.map(cell => cell.RowIndex));
     const colCount = Math.max(...table.cells.map(cell => cell.ColumnIndex));
     
-    // Initialize data arrays
     const originalData = Array(rowCount).fill(null)
       .map(() => Array(colCount).fill(''));
     
-    // Create cell metadata structure
     const cellMetadata = Array(rowCount).fill(null)
       .map(() => Array(colCount).map(() => ({
         confidence: 0,

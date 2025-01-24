@@ -1,7 +1,7 @@
 const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const File = require('../models/File');
-const Table = require('../models/Table');  // Add this import
+const Table = require('../models/Table');  
 const { processDocument } = require('../services/textract');
 
 const s3Client = new S3Client({
@@ -101,7 +101,7 @@ const processFile = async (req, res) => {
     );
 
     file.processingStatus = 'completed';
-    file.tableCount = tables.length; // Add this field to File schema if not exists
+    file.tableCount = tables.length; 
     await file.save();
 
     const tablesByPage = tables.reduce((acc, table) => {

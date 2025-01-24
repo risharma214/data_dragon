@@ -5,31 +5,24 @@ const multer = require('multer');
 const { S3Client } = require('@aws-sdk/client-s3');
 const multerS3 = require('multer-s3');
 const connectDB = require('./db');
-
-// Import all routes
 const authRoutes = require('./routes/auth');
 const uploadRoutes = require('./routes/upload');
 const fileRoutes = require('./routes/files');
-const projectRoutes = require('./routes/projects');  // Add this line
+const projectRoutes = require('./routes/projects');  
 const tableRoutes = require('./routes/tables');
 
 const app = express();
 
-// Connect to MongoDB
 connectDB();
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Add logging middleware BEFORE routes
 app.use((req, res, next) => {
     console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
     next();
 });
 
-
-// S3 Configuration
 const s3Client = new S3Client({
     region: process.env.AWS_REGION,
     credentials: {
@@ -64,19 +57,6 @@ const upload = multer({
 
 app.locals.upload = upload;
 
-
-
-
-// app.use('/api/projects', (req, res, next) => {
-//     console.log('Projects route hit:', {
-//         method: req.method,
-//         url: req.url,
-//         query: req.query,
-//         params: req.params
-//     });
-//     next();
-// });
-
 app.use('/api/projects', (req, res, next) => {
     console.log('Projects route hit:', {
         method: req.method,
@@ -92,7 +72,7 @@ app.use('/api/projects', (req, res, next) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/files', fileRoutes);
-// app.use('/api/projects', projectRoutes);  // Add the projects route normally
+// app.use('/api/projects', projectRoutes);  
 app.use('/api/tables', tableRoutes);
 
 // Health check route
@@ -109,7 +89,6 @@ app.use((error, req, res, next) => {
     });
 });
 
-// Start server
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);

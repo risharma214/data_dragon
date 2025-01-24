@@ -47,7 +47,7 @@ const NewProjectPage = ({ onBack, onComplete }) => {
   const handleFileSelect = useCallback((file) => {
     if (validateFile(file)) {
       setSelectedFile(file);
-      // Generate default project name from filename
+      // generating default project name from filename
       setProjectName(file.name.replace('.pdf', '').replace(/[^a-zA-Z0-9]/g, ' '));
     }
   }, []);
@@ -86,7 +86,6 @@ const NewProjectPage = ({ onBack, onComplete }) => {
     setError('');
 
     try {
-        // Get user from localStorage
         const user = JSON.parse(localStorage.getItem('user'));
         if (!user) {
             throw new Error('User not found');
@@ -138,7 +137,6 @@ const NewProjectPage = ({ onBack, onComplete }) => {
 
   return (
     <div className="min-h-screen bg-white relative overflow-hidden">
-      {/* Background Gradients - kept the same */}
       <div 
         className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-br from-pink-500/5 via-blue-500/5 to-purple-500/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"
         aria-hidden="true"
@@ -148,7 +146,6 @@ const NewProjectPage = ({ onBack, onComplete }) => {
         aria-hidden="true"
       />
 
-      {/* Navigation - kept the same */}
       <nav className="relative border-b border-gray-100 bg-white/80 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center h-16">
@@ -180,9 +177,8 @@ const NewProjectPage = ({ onBack, onComplete }) => {
           </div>
         )}
 
-        {/* Upload Options Grid - kept the same but updated onChange handlers */}
+        {/* Upload Options Grid */}
         <div className="grid md:grid-cols-3 gap-6">
-          {/* PDF Upload Option */}
           <div className="relative group">
             <input
               type="file"

@@ -49,7 +49,6 @@ const updateTable = async (req, res) => {
             return res.status(404).json({ error: 'Table not found' });
         }
 
-        // Update table data
         table.currentData = currentData;
         if (structure) {
             table.structure = {
@@ -61,10 +60,8 @@ const updateTable = async (req, res) => {
         const updatedTable = await table.save();
         console.log('Table updated successfully');
 
-        // Find the file to get project ID
         const file = await File.findById(table.fileId);
         if (file) {
-            // Update project's updatedAt timestamp
             await Project.findByIdAndUpdate(
                 file.projectId,
                 { $set: { updatedAt: new Date() } }

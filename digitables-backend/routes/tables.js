@@ -6,4 +6,4 @@ router.get('/:tableId', getTableData);
 
 router.patch('/:tableId', updateTable);
 
-module.exports = router;  // Export the router, not an object
+module.exports = router;  
