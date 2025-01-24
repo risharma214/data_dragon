@@ -437,8 +437,8 @@ const ProjectEditor = () => {
       <div className="relative"> {/* Added relative positioning */}
         {/* <div className="min-w-full inline-block"> */}
           {/* Column Headers */}
-          <div className="sticky top-0 bg-gray-50 border-b flex">
-            <div className="sticky left-0 w-10 h-8 border-r border-gray-200 flex items-center justify-center text-gray-400 text-sm bg-gray-50"></div>
+          <div className="sticky top-0 z-10 bg-gray-50 border-b flex">
+            <div className="sticky left-0 z-20 w-10 h-8 border-r border-gray-200 flex items-center justify-center text-gray-400 text-sm bg-gray-50"></div>
             {columns.map(col => (
               <div key={col} className="w-40 h-8 border-r border-gray-200 flex items-center justify-center text-gray-600 text-sm font-medium">
                 {col}
@@ -453,7 +453,7 @@ const ProjectEditor = () => {
                 activeCell.row === rowIndex ? 'bg-blue-50' : ''
               }`}>
                 {/* Row Header */}
-                <div className="sticky left-0 w-10 h-8 border-r border-b border-gray-200 flex items-center justify-center text-gray-600 text-sm font-medium bg-gray-50">
+                <div className="sticky left-0 z-10 w-10 h-8 border-r border-b border-gray-200 flex items-center justify-center text-gray-600 text-sm font-medium bg-gray-50">
                   <div className="flex items-center gap-1">
                     <span>{rowIndex + 1}</span>
                     <button
@@ -660,7 +660,7 @@ const ProjectEditor = () => {
           </div>
 
           <div className="relative flex-1 overflow-hidden" style={{ height: 'calc(100vh - 8.5rem)' }}> {/* 8.5rem accounts for header + toolbar */}
-            <div className="absolute inset-0 overflow-auto pb-48"> {/* pb-48 for thumbnail bar */}
+            <div className="absolute inset-0 overflow-auto"> {/* pb-48 for thumbnail bar */}
               <div className="inline-block min-w-full">
                 {renderGrid()}
               </div>
