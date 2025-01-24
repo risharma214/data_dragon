@@ -424,7 +424,7 @@ const ProjectEditor = () => {
       firstRow: currentTableData?.currentData?.[0],
       structure: currentTableData?.structure
     });
-
+  
     if (!currentTableData) return null;
   
     const { currentData, structure } = currentTableData;
@@ -434,103 +434,105 @@ const ProjectEditor = () => {
     );
   
     return (
-      <div className="min-w-full inline-block">
-        {/* Column Headers */}
-        <div className="sticky top-0 bg-gray-50 border-b flex">
-          <div className="w-10 h-8 border-r border-gray-200 flex items-center justify-center text-gray-400 text-sm"></div>
-          {columns.map(col => (
-            <div key={col} className="w-40 h-8 border-r border-gray-200 flex items-center justify-center text-gray-600 text-sm font-medium">
-              {col}
-            </div>
-          ))}
-        </div>
-  
-        {/* Grid Content */}
-        <div>
-          {currentData.map((row, rowIndex) => (
-            <div key={rowIndex} className={`flex group ${
-              activeCell.row === rowIndex ? 'bg-blue-50' : ''
-            }`}>
-              {/* Row Header */}
-              <div className="w-10 h-8 border-r border-b border-gray-200 flex items-center justify-center text-gray-600 text-sm font-medium bg-gray-50 sticky left-0">
-                <div className="flex items-center gap-1">
-                  <span>{rowIndex + 1}</span>
-                  <button
-                    onClick={() => deleteRow(rowIndex)}
-                    className="invisible group-hover:visible text-red-500 hover:text-red-700 p-1"
-                  >
-                    <Trash2 size={12} />
-                  </button>
-                </div>
+      <div className="relative"> {/* Added relative positioning */}
+        {/* <div className="min-w-full inline-block"> */}
+          {/* Column Headers */}
+          <div className="sticky top-0 bg-gray-50 border-b flex">
+            <div className="sticky left-0 w-10 h-8 border-r border-gray-200 flex items-center justify-center text-gray-400 text-sm bg-gray-50"></div>
+            {columns.map(col => (
+              <div key={col} className="w-40 h-8 border-r border-gray-200 flex items-center justify-center text-gray-600 text-sm font-medium">
+                {col}
               </div>
-              
-              {/* Row Data */}
-              {row.map((cell, colIndex) => {
-                const highlightKey = `${rowIndex}-${colIndex}`;
-                const highlightColor = highlights[highlightKey];
-                const cellConfidence = currentTableData.textractMetadata?.cells?.[rowIndex]?.[colIndex]?.confidence || 100;
-                const isLowConfidence = cellConfidence < 80;  // Threshold for confidence
-
-                return (
-                  <div 
-                    key={colIndex} 
-                    className={`w-40 h-8 border-r border-b border-gray-200 relative ${
-                      activeCell.col === colIndex && activeCell.row !== rowIndex ? 'bg-blue-50/50' : ''
-                    }`}
-                    onClick={() => handleCellClick(rowIndex, colIndex)}
-                    style={{
-                      backgroundColor: highlightColor ? `${highlightColor}40` : // 40 is hex for 25% opacity
-                                      isLowConfidence ? '#f4433640' : 
-                                      undefined
-                    }}
-                  >
-                    <input
-                      type="text"
-                      value={cell || ''}
-                      onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
-                      className={`w-full h-full px-2 focus:outline-none focus:ring-1 focus:ring-blue-500 ${
-                        activeCell.row === rowIndex && activeCell.col === colIndex
-                          ? 'bg-transparent ring-1 ring-blue-500'
-                          : 'bg-transparent'
-                      }`}
-                    />
-                    {activeCell.row === rowIndex && activeCell.col === colIndex && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowHighlightMenu(`${rowIndex}-${colIndex}`);
-                        }}
-                        className="absolute top-1 right-1 w-4 h-4 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center"
-                      >
-                        <span className="block w-2 h-2 rounded-full" style={{ 
-                          backgroundColor: highlightColor || 'white' 
-                        }} />
-                      </button>
-                    )}
-                    {showHighlightMenu === `${rowIndex}-${colIndex}` && (
-                      <HighlightMenu 
-                        onSelect={(color) => {
-                          handleHighlight(rowIndex, colIndex, color);
-                          setShowHighlightMenu(null);
-                        }}
-                        onRemove={() => {
-                          handleHighlight(rowIndex, colIndex, null);
-                          setShowHighlightMenu(null);
-                        }}
-                      />
-                    )}
+            ))}
+          </div>
+    
+          {/* Grid Content */}
+          <div>
+            {currentData.map((row, rowIndex) => (
+              <div key={rowIndex} className={`flex group ${
+                activeCell.row === rowIndex ? 'bg-blue-50' : ''
+              }`}>
+                {/* Row Header */}
+                <div className="sticky left-0 w-10 h-8 border-r border-b border-gray-200 flex items-center justify-center text-gray-600 text-sm font-medium bg-gray-50">
+                  <div className="flex items-center gap-1">
+                    <span>{rowIndex + 1}</span>
+                    <button
+                      onClick={() => deleteRow(rowIndex)}
+                      className="invisible group-hover:visible text-red-500 hover:text-red-700 p-1"
+                    >
+                      <Trash2 size={12} />
+                    </button>
                   </div>
-                );
-              })}
-            </div>
-          ))}
-        </div>
+                </div>
+                
+                {/* Row Data */}
+                {row.map((cell, colIndex) => {
+                  const highlightKey = `${rowIndex}-${colIndex}`;
+                  const highlightColor = highlights[highlightKey];
+                  const cellConfidence = currentTableData.textractMetadata?.cells?.[rowIndex]?.[colIndex]?.confidence || 100;
+                  const isLowConfidence = cellConfidence < 80;  // Threshold for confidence
+
+                  return (
+                    <div 
+                      key={colIndex} 
+                      className={`w-40 h-8 border-r border-b border-gray-200 relative ${
+                        activeCell.col === colIndex && activeCell.row !== rowIndex ? 'bg-blue-50/50' : ''
+                      }`}
+                      onClick={() => handleCellClick(rowIndex, colIndex)}
+                      style={{
+                        backgroundColor: highlightColor ? `${highlightColor}40` : // 40 is hex for 25% opacity
+                                        isLowConfidence ? '#f4433640' : 
+                                        undefined
+                      }}
+                    >
+                      <input
+                        type="text"
+                        value={cell || ''}
+                        onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
+                        className={`w-full h-full px-2 focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                          activeCell.row === rowIndex && activeCell.col === colIndex
+                            ? 'bg-transparent ring-1 ring-blue-500'
+                            : 'bg-transparent'
+                        }`}
+                      />
+                      {activeCell.row === rowIndex && activeCell.col === colIndex && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowHighlightMenu(`${rowIndex}-${colIndex}`);
+                          }}
+                          className="absolute top-1 right-1 w-4 h-4 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center"
+                        >
+                          <span className="block w-2 h-2 rounded-full" style={{ 
+                            backgroundColor: highlightColor || 'white' 
+                          }} />
+                        </button>
+                      )}
+                      {showHighlightMenu === `${rowIndex}-${colIndex}` && (
+                        <HighlightMenu 
+                          onSelect={(color) => {
+                            handleHighlight(rowIndex, colIndex, color);
+                            setShowHighlightMenu(null);
+                          }}
+                          onRemove={() => {
+                            handleHighlight(rowIndex, colIndex, null);
+                            setShowHighlightMenu(null);
+                          }}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        {/* </div> */}
       </div>
     );
   };
 
   return (
-    <div className="h-screen flex flex-col bg-white pb-48">
+    <div className="h-screen flex flex-col bg-white pb-12">
       <header className="border-b border-gray-100 bg-white">
         <div className="flex items-center h-14 px-4 gap-6">
           <div className="flex items-center gap-4">
@@ -657,12 +659,23 @@ const ProjectEditor = () => {
             </div>
           </div>
 
-          <div className="flex-1 overflow-hidden">
-            {/* {renderGrid()} */}
-            <div className="h-full overflow-auto"> {/* Added container with scroll */}
-              {renderGrid()}
+          <div className="relative flex-1 overflow-hidden" style={{ height: 'calc(100vh - 8.5rem)' }}> {/* 8.5rem accounts for header + toolbar */}
+            <div className="absolute inset-0 overflow-auto pb-48"> {/* pb-48 for thumbnail bar */}
+              <div className="inline-block min-w-full">
+                {renderGrid()}
+              </div>
             </div>
           </div>
+
+          {/* <div className="flex-1 overflow-hidden flex flex-col">
+            <div className="flex-1 overflow-hidden pb-48"> 
+              <div className="h-full overflow-auto">
+                <div className="inline-block min-w-full"> 
+                  {renderGrid()}
+                </div>
+              </div>
+            </div>
+          </div> */}
         </div>
       </div>
 
