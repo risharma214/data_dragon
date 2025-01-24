@@ -660,7 +660,7 @@ const ProjectEditor = () => {
             >
               <ArrowLeft size={20} className="text-gray-600" />
             </button>
-            <div className="text-lg font-semibold bg-gradient-to-r from-pink-500 via-blue-500 to-purple-500 bg-clip-text text-transparent">
+            <div className={`text-lg font-semibold bg-gradient-to-r ${isDarkMode ? 'from-yellow-300 via-green-400 to-blue-500':'from-pink-500 via-blue-500 to-purple-500'} bg-clip-text text-transparent `}>
               DigiTables
             </div>
           </div>
