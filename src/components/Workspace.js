@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Worker, Viewer } from '@react-pdf-viewer/core';
 import { defaultLayoutPlugin } from '@react-pdf-viewer/default-layout';
+import { pageNavigationPlugin } from '@react-pdf-viewer/page-navigation';
 import '@react-pdf-viewer/core/lib/styles/index.css';
 import '@react-pdf-viewer/default-layout/lib/styles/index.css';
 import { 
@@ -28,6 +29,7 @@ const ProjectEditor = () => {
   const { projectId, fileId } = useParams();
   const navigate = useNavigate();
   const defaultLayoutPluginInstance = defaultLayoutPlugin();
+  const pageNavigationPluginInstance = pageNavigationPlugin();
 
   const [activeCell, setActiveCell] = useState({ row: null, col: null });
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -43,6 +45,11 @@ const ProjectEditor = () => {
   const [isCleaningUp, setIsCleaningUp] = useState(false);
   const [highlights, setHighlights] = useState({});
   const [showHighlightMenu, setShowHighlightMenu] = useState(null);
+  const [pdfViewerInstance, setPdfViewerInstance] = useState(null);
+  // const pageNavigationPluginInstance = defaultLayoutPluginInstance.pageNavigationPluginInstance;
+  const { jumpToPage } = pageNavigationPluginInstance;
+  // const { jumpToPage } = defaultLayoutPluginInstance;
+  
 
 
   // In Workspace.js, update the initial data fetch
@@ -232,7 +239,16 @@ const ProjectEditor = () => {
 
 
   const handleTableSelect = (tableId) => {
+    console.log('Table selected:', tableId);
     setSelectedTable(tableId);
+    
+    const selectedTable = tables.find(t => t.id === tableId);
+    
+    if (selectedTable) {
+      // const { jumpToPage } = defaultLayoutPluginInstance;
+      console.log('Attempting to jump to page:', selectedTable.pageNumber - 1);
+      jumpToPage(selectedTable.pageNumber - 1);
+    }
   };
 
   const handleCellChange = (rowIndex, colIndex, value) => {
@@ -406,7 +422,7 @@ const ProjectEditor = () => {
         <div className="h-full relative">
           <Viewer
             fileUrl={pdfUrl}
-            plugins={[defaultLayoutPluginInstance]}
+            plugins={[defaultLayoutPluginInstance, pageNavigationPluginInstance]}
             defaultScale={1.0}
             onPageChange={(e) => setCurrentPage(e.currentPage)}
           />
