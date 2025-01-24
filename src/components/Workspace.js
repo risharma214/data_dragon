@@ -108,6 +108,8 @@ const ProjectEditor = () => {
         console.log('No table selected');
         return;
       }
+
+      setActiveCell({ row: null, col: null });
       
       try {
         console.log('Fetching data for table:', selectedTable);
@@ -115,11 +117,11 @@ const ProjectEditor = () => {
         if (!response.ok) throw new Error('Failed to fetch table data');
         
         const data = await response.json();
-        console.log('Received table data structure:', {
-          currentData: data.currentData ? `${data.currentData.length}x${data.currentData[0]?.length}` : 'none',
-          originalData: data.originalData ? `${data.originalData.length}x${data.originalData[0]?.length}` : 'none',
-          structure: data.structure
-        });
+        // console.log('Received table data structure:', {
+        //   currentData: data.currentData ? `${data.currentData.length}x${data.currentData[0]?.length}` : 'none',
+        //   originalData: data.originalData ? `${data.originalData.length}x${data.originalData[0]?.length}` : 'none',
+        //   structure: data.structure
+        // });
         setCurrentTableData(data);
 
         const highlightMap = {};
@@ -242,14 +244,16 @@ const ProjectEditor = () => {
 
 
   const handleTableSelect = (tableId) => {
-    console.log('Table selected:', tableId);
+
+    setActiveCell({ row: null, col: null });
+
+    // console.log('Table selected:', tableId);
+
     setSelectedTable(tableId);
     
     const selectedTable = tables.find(t => t.id === tableId);
     
     if (selectedTable) {
-      // const { jumpToPage } = defaultLayoutPluginInstance;
-      console.log('Attempting to jump to page:', selectedTable.pageNumber - 1);
       jumpToPage(selectedTable.pageNumber - 1);
     }
   };
@@ -712,7 +716,7 @@ const ProjectEditor = () => {
               </div>
             </div>
 
-            <div className={`h-8 px-4 border-t ${
+            {/* <div className={`h-8 px-4 border-t ${
               isDarkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-100 bg-gray-50'
             } flex items-center gap-2`}>
               <div className={`w-20 px-2 py-1 text-sm ${
@@ -723,6 +727,33 @@ const ProjectEditor = () => {
               } rounded`}>
                 fx
               </div>
+            </div> */}
+
+            {/* Formula/Text Editor Bar */}
+            <div className={`h-8 px-4 border-t ${
+              isDarkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-100 bg-gray-50'
+            } flex items-center gap-2`}>
+              <div className={`w-20 px-2 py-1 text-sm ${
+                isDarkMode ? 'bg-gray-900 border-gray-700 text-gray-300' : 'bg-white border'
+              } rounded`}>
+                {activeCell.row !== null && activeCell.col !== null 
+                  ? `${String.fromCharCode(65 + activeCell.col)}${activeCell.row + 1}`
+                  : 'No cell'}
+              </div>
+              <input
+                type="text"
+                value={activeCell.row !== null && activeCell.col !== null 
+                  ? (currentTableData?.currentData[activeCell.row][activeCell.col] || '')
+                  : ''}
+                onChange={(e) => {
+                  if (activeCell.row !== null && activeCell.col !== null) {
+                    handleCellChange(activeCell.row, activeCell.col, e.target.value);
+                  }
+                }}
+                placeholder="Enter cell content"
+                className={`flex-1 px-2 py-1 text-sm  ${isDarkMode? 'bg-gray-900 border-gray-700 text-gray-100':'bg-white border-gray-50' } border rounded focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-gray-400`}
+                disabled={activeCell.row === null || activeCell.col === null}
+              />
             </div>
           </div>
 
