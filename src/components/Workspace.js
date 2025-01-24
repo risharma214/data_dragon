@@ -70,7 +70,7 @@ const ProjectEditor = () => {
         const data = await response.json();
 
         // console.log('Full Project data:', data);
-        
+
         setProjectData(data);
         
         if (data.files && data.files.length > 0) {
@@ -343,12 +343,38 @@ const ProjectEditor = () => {
     }
   };
 
+  // const addRow = () => {
+  //   if (!currentTableData) return;
+    
+  //   const newData = [...currentTableData.currentData];
+  //   const newRow = new Array(currentTableData.structure.columnCount).fill('');
+  //   newData.push(newRow);
+    
+  //   setCurrentTableData({
+  //     ...currentTableData,
+  //     currentData: newData,
+  //     structure: {
+  //       ...currentTableData.structure,
+  //       rowCount: currentTableData.structure.rowCount + 1
+  //     }
+  //   });
+  // };
+
   const addRow = () => {
     if (!currentTableData) return;
     
     const newData = [...currentTableData.currentData];
     const newRow = new Array(currentTableData.structure.columnCount).fill('');
-    newData.push(newRow);
+    
+    if (activeCell.row !== null) {
+      // Insert after the active row
+      newData.splice(activeCell.row + 1, 0, newRow);
+      // Update active cell to the new row
+      setActiveCell({ row: activeCell.row + 1, col: activeCell.col });
+    } else {
+      // Add to the end if no row is selected
+      newData.push(newRow);
+    }
     
     setCurrentTableData({
       ...currentTableData,
@@ -358,6 +384,8 @@ const ProjectEditor = () => {
         rowCount: currentTableData.structure.rowCount + 1
       }
     });
+    
+    setHasUnsavedChanges(true);
   };
 
   const deleteRow = (rowIndex) => {
