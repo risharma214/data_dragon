@@ -22,7 +22,9 @@ import {
   Grid,
   Merge,
   Copy,
-  Scissors
+  Scissors,
+  Moon,
+  Sun
 } from 'lucide-react';
 
 const ProjectEditor = () => {
@@ -30,7 +32,7 @@ const ProjectEditor = () => {
   const navigate = useNavigate();
   const defaultLayoutPluginInstance = defaultLayoutPlugin();
   const pageNavigationPluginInstance = pageNavigationPlugin();
-
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const [activeCell, setActiveCell] = useState({ row: null, col: null });
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [selectedTable, setSelectedTable] = useState(null);
@@ -46,13 +48,16 @@ const ProjectEditor = () => {
   const [highlights, setHighlights] = useState({});
   const [showHighlightMenu, setShowHighlightMenu] = useState(null);
   const [pdfViewerInstance, setPdfViewerInstance] = useState(null);
-  // const pageNavigationPluginInstance = defaultLayoutPluginInstance.pageNavigationPluginInstance;
   const { jumpToPage } = pageNavigationPluginInstance;
-  // const { jumpToPage } = defaultLayoutPluginInstance;
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDarkMode]);
   
-
-
-  // In Workspace.js, update the initial data fetch
   useEffect(() => {
     const fetchProjectData = async () => {
       if (!projectId) return;
@@ -66,16 +71,13 @@ const ProjectEditor = () => {
         console.log('Full Project data:', data);
         setProjectData(data);
         
-        // Find the file data
         if (data.files && data.files.length > 0) {
           const currentFile = fileId 
             ? data.files.find(f => f.id === fileId)
             : data.files[0];
             
           if (currentFile?.tables?.length > 0) {
-            // Sort tables by page number
             const sortedTables = [...currentFile.tables].sort((a, b) => {
-              // First by page number
               if (a.pageNumber !== b.pageNumber) {
                 return a.pageNumber - b.pageNumber;
               }
@@ -189,6 +191,7 @@ const ProjectEditor = () => {
     };
   }, [hasUnsavedChanges, isCleaningUp]);
 
+
   const handleHighlight = (rowIndex, colIndex, color) => {
     setHighlights(prev => {
       const key = `${rowIndex}-${colIndex}`;
@@ -206,7 +209,7 @@ const ProjectEditor = () => {
   };
 
   const HighlightMenu = ({ onSelect, onRemove }) => (
-    <div className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 p-1 z-50">
+    <div className={`absolute top-full left-0 mt-1 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} p-1 z-50`}>
       <div className="grid grid-cols-4 gap-1">
         {['#ffeb3b', '#4caf50', '#f44336', '#2196f3'].map(color => (
           <button
@@ -219,7 +222,7 @@ const ProjectEditor = () => {
       </div>
       <button
         onClick={onRemove}
-        className="w-full mt-1 px-2 py-1 text-xs text-gray-600 hover:bg-gray-50 rounded"
+        className={`w-full mt-1 px-2 py-1 text-xs ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-50'} rounded`}
       >
         Remove
       </button>
@@ -411,7 +414,7 @@ const ProjectEditor = () => {
   
     if (!pdfUrl) {
       return (
-        <div className="flex items-center justify-center h-full text-gray-500">
+        <div className={`flex items-center justify-center h-full ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
           No PDF selected
         </div>
       );
@@ -425,6 +428,7 @@ const ProjectEditor = () => {
             plugins={[defaultLayoutPluginInstance, pageNavigationPluginInstance]}
             defaultScale={1.0}
             onPageChange={(e) => setCurrentPage(e.currentPage)}
+            theme={isDarkMode ? 'dark' : 'light'}
           />
         </div>
       </Worker>
@@ -450,13 +454,12 @@ const ProjectEditor = () => {
     );
   
     return (
-      <div className="relative"> {/* Added relative positioning */}
-        {/* <div className="min-w-full inline-block"> */}
+      <div className="relative"> 
           {/* Column Headers */}
-          <div className="sticky top-0 z-10 bg-gray-50 border-b flex">
-            <div className="sticky left-0 z-20 w-10 h-8 border-r border-gray-200 flex items-center justify-center text-gray-400 text-sm bg-gray-50"></div>
+          <div className={`sticky top-0 z-10 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'} border-b flex`}>
+            <div className={`sticky left-0 z-20 w-10 h-8 border-r ${isDarkMode ? 'border-gray-700 bg-gray-800 text-gray-400' : 'border-gray-200 bg-gray-50 text-gray-400'} flex items-center justify-center  text-sm`}></div>
             {columns.map(col => (
-              <div key={col} className="w-40 h-8 border-r border-gray-200 flex items-center justify-center text-gray-600 text-sm font-medium">
+              <div key={col} className={`w-40 h-8 border-r ${isDarkMode ? 'border-gray-700 text-gray-300' : 'border-gray-200 text-gray-600'} flex items-center justify-center  text-sm font-medium`}>
                 {col}
               </div>
             ))}
@@ -466,10 +469,10 @@ const ProjectEditor = () => {
           <div>
             {currentData.map((row, rowIndex) => (
               <div key={rowIndex} className={`flex group ${
-                activeCell.row === rowIndex ? 'bg-blue-50' : ''
+                activeCell.row === rowIndex ? isDarkMode ? 'bg-gray-800/50' : 'bg-blue-50' : ''
               }`}>
                 {/* Row Header */}
-                <div className="sticky left-0 z-10 w-10 h-8 border-r border-b border-gray-200 flex items-center justify-center text-gray-600 text-sm font-medium bg-gray-50">
+                <div className={`sticky left-0 z-10 w-10 h-8 border-r border-b ${isDarkMode ? 'border-gray-700 bg-gray-800 text-gray-300' : 'border-gray-200 bg-gray-50 text-gray-600'} flex items-center justify-center text-sm font-medium`}>
                   <div className="flex items-center gap-1">
                     <span>{rowIndex + 1}</span>
                     <button
@@ -491,8 +494,8 @@ const ProjectEditor = () => {
                   return (
                     <div 
                       key={colIndex} 
-                      className={`w-40 h-8 border-r border-b border-gray-200 relative ${
-                        activeCell.col === colIndex && activeCell.row !== rowIndex ? 'bg-blue-50/50' : ''
+                      className={`w-40 h-8 border-r border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} relative ${
+                        activeCell.col === colIndex && activeCell.row !== rowIndex ? isDarkMode ? 'bg-gray-800/50' : 'bg-blue-50/50' : ''
                       }`}
                       onClick={() => handleCellClick(rowIndex, colIndex)}
                       style={{
@@ -506,6 +509,9 @@ const ProjectEditor = () => {
                         value={cell || ''}
                         onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
                         className={`w-full h-full px-2 focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                          isDarkMode ? 'bg-transparent text-gray-300' : 'bg-transparent'
+                        }
+                        ${
                           activeCell.row === rowIndex && activeCell.col === colIndex
                             ? 'bg-transparent ring-1 ring-blue-500'
                             : 'bg-transparent'
@@ -517,7 +523,7 @@ const ProjectEditor = () => {
                             e.stopPropagation();
                             setShowHighlightMenu(`${rowIndex}-${colIndex}`);
                           }}
-                          className="absolute top-1 right-1 w-4 h-4 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center"
+                          className={`absolute top-1 right-1 w-4 h-4 rounded-full ${isDarkMode ? 'bg-gray-600 hover:bg-gray-500' : 'bg-gray-200 hover:bg-gray-300'} flex items-center justify-center`}
                         >
                           <span className="block w-2 h-2 rounded-full" style={{ 
                             backgroundColor: highlightColor || 'white' 
@@ -548,13 +554,15 @@ const ProjectEditor = () => {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-white pb-12">
-      <header className="border-b border-gray-100 bg-white">
+    <div className={`h-screen flex flex-col ${isDarkMode ? 'dark bg-gray-900' : 'bg-white'} pb-12`}>
+      <header className={`border-b ${isDarkMode ? 'border-gray-700 bg-gray-900' : 'border-gray-100 bg-white'}`}>
         <div className="flex items-center h-14 px-4 gap-6">
           <div className="flex items-center gap-4">
             <button 
               onClick={handleBackNavigation}
-              className="hover:bg-gray-100 p-2 rounded-lg transition-colors"
+              className={`hover:bg-gray-100 dark:hover:bg-gray-800 p-2 rounded-lg transition-colors ${
+                isDarkMode ? 'text-gray-300' : 'text-gray-600'
+              }`}
             >
               <ArrowLeft size={20} className="text-gray-600" />
             </button>
@@ -572,21 +580,33 @@ const ProjectEditor = () => {
             type="text"
             value={projectData?.name || "Loading..."}
             readOnly
-            className="text-gray-900 font-medium px-3 py-1 border border-transparent rounded-lg hover:bg-gray-50 focus:border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-          />
+            className={`${isDarkMode ? 'text-gray-200 hover:bg-gray-800 bg-gray-800 focus:border-gray-800' : 'text-gray-900 hover:bg-gray-50 focus:border-gray-200'} 
+            font-medium px-3 py-1 border border-transparent rounded-lg 
+            focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:focus:border-gray-600`}/>
 
 
           <div className="flex items-center gap-3 ml-auto">
-            <button className="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-2">
-              <Eye size={16} />
-              Preview
+            <button 
+              onClick={() => setIsDarkMode(!isDarkMode)}
+              className={`px-3 py-1.5 text-sm ${
+                isDarkMode 
+                  ? 'text-gray-300 hover:bg-gray-800' 
+                  : 'text-gray-600 hover:bg-gray-50'
+              } rounded-lg transition-colors flex items-center gap-2`}>
+              {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
+              {isDarkMode ? 'Light Mode' : 'Dark Mode'}
             </button>
+
             <button 
               onClick={handleSave}
               className={`px-3 py-1.5 text-sm ${
                 hasUnsavedChanges 
-                  ? 'bg-black text-white hover:bg-gray-900' 
-                  : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  ? isDarkMode 
+                    ? 'bg-blue-600 text-white hover:bg-blue-700'
+                    : 'bg-black text-white hover:bg-gray-900'
+                  : isDarkMode
+                    ? 'bg-gray-800 text-gray-500 cursor-not-allowed'
+                    : 'bg-gray-100 text-gray-400 cursor-not-allowed'
               } rounded-lg transition-colors flex items-center gap-2`}
               disabled={!hasUnsavedChanges}
             >
@@ -599,7 +619,8 @@ const ProjectEditor = () => {
             </button> */}
             <button
               onClick={downloadCSV}
-              className="px-3 py-1.5 text-sm text-white bg-green-500 rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2">
+              className="px-3 py-1.5 text-sm text-white bg-green-500 rounded-lg hover:bg-green-600 
+                dark:bg-green-600 dark:hover:bg-green-700 transition-colors flex items-center gap-2">
               <Download size={16} />
               Export
             </button>
@@ -609,67 +630,97 @@ const ProjectEditor = () => {
 
       <div className="flex-1 flex min-w-0">
         <div className="w-1/2 flex flex-col">
-          <div className="h-12 border-b border-gray-100 flex items-center justify-between px-4">
-            <span className="font-medium text-sm">Original PDF</span>
+            <div className={`h-12 border-b ${isDarkMode ? 'border-gray-700 bg-gray-900' : 'border-gray-100'} 
+              flex items-center justify-between px-4`}>
+              <span className={`font-medium text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
+                Original PDF
+              </span>
+            </div>
+            <div className={`flex-1 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-50'} overflow-hidden relative`}>
+              <div className="absolute inset-0 overflow-auto">
+                {renderPdfViewer()}
+              </div>
+            </div>
           </div>
-          <div className="flex-1 bg-gray-50 overflow-hidden relative"> 
-          <div className="absolute inset-0 overflow-auto"> 
-            {renderPdfViewer()}
-          </div>
-        </div>
-        </div>
 
-        <div className="w-1/2 flex flex-col border-l h-full">
-          <div className="border-b border-gray-100 bg-white">
+        <div className={`w-1/2 flex flex-col ${isDarkMode ? 'border-gray-700' : ''} border-l h-full`}>
+          <div className={`border-b ${isDarkMode ? 'border-gray-700 bg-gray-900' : 'border-gray-100 bg-white'}`}>
             <div className="h-12 px-4 flex items-center gap-4">
-              <div className="flex items-center gap-2 border-r pr-4">
-                <button 
+              <div className={`flex items-center gap-2 border-r ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} pr-4`}>
+              <button 
                   onClick={addRow}
-                  className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors text-gray-600"
+                  className={`p-1.5 ${
+                    isDarkMode ? 'hover:bg-gray-800 text-gray-300' : 'hover:bg-gray-100 text-gray-600'
+                  } rounded-lg transition-colors`}
                   title="Add Row"
                 >
                   <Plus size={16} />
                 </button>
                 <button 
-                  className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors text-gray-600"
+                  className={`p-1.5 ${
+                    isDarkMode ? 'hover:bg-gray-800 text-gray-300' : 'hover:bg-gray-100 text-gray-600'
+                  } rounded-lg transition-colors`}
                   title="Delete Selected Row"
                   onClick={() => activeCell.row !== null && deleteRow(activeCell.row)}
                 >
                   <Trash2 size={16} />
                 </button>
               </div>
-              <div className="flex items-center gap-2 border-r pr-4">
-                <button className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors text-gray-600">
+
+              <div className={`flex items-center gap-2 border-r ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} pr-4`}>
+                <button className={`p-1.5 ${
+                  isDarkMode ? 'hover:bg-gray-800 text-gray-300' : 'hover:bg-gray-100 text-gray-600'
+                } rounded-lg transition-colors`}>
                   <Copy size={16} />
                 </button>
-                <button className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors text-gray-600">
+                <button className={`p-1.5 ${
+                  isDarkMode ? 'hover:bg-gray-800 text-gray-300' : 'hover:bg-gray-100 text-gray-600'
+                } rounded-lg transition-colors`}>
                   <Scissors size={16} />
                 </button>
               </div>
-              <div className="flex items-center gap-2 border-r pr-4">
-                <button className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors text-gray-600">
+
+              <div className={`flex items-center gap-2 border-r ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} pr-4`}>
+                <button className={`p-1.5 ${
+                  isDarkMode ? 'hover:bg-gray-800 text-gray-300' : 'hover:bg-gray-100 text-gray-600'
+                } rounded-lg transition-colors`}>
                   <Merge size={16} />
                 </button>
-                <button className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors text-gray-600">
+                <button className={`p-1.5 ${
+                  isDarkMode ? 'hover:bg-gray-800 text-gray-300' : 'hover:bg-gray-100 text-gray-600'
+                } rounded-lg transition-colors`}>
                   <Grid size={16} />
                 </button>
               </div>
+
               <div className="flex items-center gap-2">
-                <button className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors text-gray-600">
+                <button className={`p-1.5 ${
+                  isDarkMode ? 'hover:bg-gray-800 text-gray-300' : 'hover:bg-gray-100 text-gray-600'
+                } rounded-lg transition-colors`}>
                   <AlignLeft size={16} />
                 </button>
-                <button className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors text-gray-600">
+                <button className={`p-1.5 ${
+                  isDarkMode ? 'hover:bg-gray-800 text-gray-300' : 'hover:bg-gray-100 text-gray-600'
+                } rounded-lg transition-colors`}>
                   <AlignCenter size={16} />
                 </button>
-                <button className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors text-gray-600">
+                <button className={`p-1.5 ${
+                  isDarkMode ? 'hover:bg-gray-800 text-gray-300' : 'hover:bg-gray-100 text-gray-600'
+                } rounded-lg transition-colors`}>
                   <AlignRight size={16} />
                 </button>
               </div>
             </div>
 
-            <div className="h-8 px-4 border-t border-gray-100 flex items-center gap-2 bg-gray-50">
-              <div className="w-20 px-2 py-1 text-sm bg-white border rounded">A1</div>
-              <div className="flex-1 px-2 py-1 text-sm bg-white border rounded">
+            <div className={`h-8 px-4 border-t ${
+              isDarkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-100 bg-gray-50'
+            } flex items-center gap-2`}>
+              <div className={`w-20 px-2 py-1 text-sm ${
+                isDarkMode ? 'bg-gray-900 border-gray-700 text-gray-300' : 'bg-white border'
+              } rounded`}>A1</div>
+              <div className={`flex-1 px-2 py-1 text-sm ${
+                isDarkMode ? 'bg-gray-900 border-gray-700 text-gray-300' : 'bg-white border'
+              } rounded`}>
                 fx
               </div>
             </div>
@@ -695,20 +746,22 @@ const ProjectEditor = () => {
         </div>
       </div>
 
-      <div className={`border-t border-gray-100 bg-white transition-all duration-300 fixed bottom-0 left-0 right-0 z-10 ${sidebarOpen ? 'h-64' : 'h-12'}`}>
-        <div className="h-12 border-b border-gray-100 flex items-center justify-between px-4">
+      <div className={`border-t ${
+          isDarkMode ? 'border-gray-700 bg-gray-900' : 'border-gray-100 bg-white'
+        } transition-all duration-300 fixed bottom-0 left-0 right-0 z-10 ${sidebarOpen ? 'h-64' : 'h-12'}`}>
+        <div className={`h-12 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-100'} flex items-center justify-between px-4`}>
           <div className="flex items-center gap-2">
-            <Table size={16} className="text-gray-400" />
-            <span className="font-medium text-sm">Tables</span>
+            <Table size={16} className={isDarkMode ? 'text-gray-400' : 'text-gray-400'} />
+            <span className="font-medium text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}">Tables</span>
           </div>
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+            className={`p-1 ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'} rounded-lg transition-colors`}
           >
             {sidebarOpen ? (
-              <ChevronDown size={16} className="text-gray-400" />
+              <ChevronDown size={16} className={isDarkMode ? 'text-gray-400' : 'text-gray-400'} />
             ) : (
-              <ChevronUp size={16} className="text-gray-400" />
+              <ChevronUp size={16} className={isDarkMode ? 'text-gray-400' : 'text-gray-400'} />
             )}
           </button>
         </div>
@@ -722,18 +775,27 @@ const ProjectEditor = () => {
                   onClick={() => handleTableSelect(table.id)}
                   className={`flex-none text-left transition-all ${
                     selectedTable === table.id
-                      ? 'bg-blue-50 border-blue-500'
-                      : 'hover:bg-gray-50 border-transparent'
+                      ? isDarkMode 
+                        ? 'bg-gray-800 border-blue-500'
+                        : 'bg-blue-50 border-blue-500'
+                      : isDarkMode
+                        ? 'hover:bg-gray-800 border-transparent'
+                        : 'hover:bg-gray-50 border-transparent'
                   } border rounded-lg p-3 w-48`}
                 >
-                  <div className="bg-white border rounded-md h-20 mb-2 flex items-center justify-center text-gray-400">
+                  <div className={`${isDarkMode ? 'bg-gray-900' : 'bg-white'} border ${
+                isDarkMode ? 'border-gray-700' : ''} rounded-md h-20 mb-2 flex items-center justify-center text-gray-400`}>
                     <Table size={24} />
                   </div>
                   <div className="space-y-1">
-                    <div className="font-medium text-sm truncate">
+                    <div className={`font-medium text-sm truncate ${
+                  isDarkMode ? 'text-gray-300' : ''
+                }`}>
                       {table.caption?.text || `Table ${table.structure?.rowCount}x${table.structure?.columnCount}`}
                     </div>
-                    <div className="flex items-center justify-between text-xs text-gray-500">
+                    <div className={`flex items-center justify-between text-xs ${
+                        isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                      }`}>
                       <span>Page {table.pageNumber}</span>
                       <span>{table.structure?.rowCount}x{table.structure?.columnCount}</span>
                     </div>
